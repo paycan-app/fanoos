@@ -20,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
+use Filament\Notifications\Notification;
 
 class SetupWizard extends Page
 {
@@ -55,7 +56,22 @@ class SetupWizard extends Page
                         Section::make('Import Orders & Order Items')
                             ->description('Upload your CSVs using the buttons below. This uses Filament’s importer with mapping and validation.')
                             ->schema([
-                                \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-import-actions'),
+                                \Filament\Schemas\Components\Html::make('<p class="text-sm text-neutral-600">Start by importing your CSV files. Use the buttons below to open the import interfaces for Orders and Order Items.</p>'),
+                            ])
+                            ->footerActionsAlignment(\Filament\Support\Enums\Alignment::Center)
+                            ->footerActions([
+                                ImportAction::make('import_orders')
+                                    ->label('Import Orders CSV')
+                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                    ->color('primary')
+                                    ->importer(\App\Filament\Imports\OrderImporter::class)
+                                    ->after(fn () => $this->forceRender()),
+                                ImportAction::make('import_order_items')
+                                    ->label('Import Order Items CSV')
+                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                    ->color('gray')
+                                    ->importer(\App\Filament\Imports\OrderItemImporter::class)
+                                    ->after(fn () => $this->forceRender()),
                             ]),
 
                         Section::make('Import Progress')
@@ -128,8 +144,11 @@ class SetupWizard extends Page
                     $settings->rfm_enable = (bool) ($this->rfm['rfm_enable'] ?? true);
                     $settings->rfm_bins = (int) ($this->rfm['rfm_bins'] ?? 5);
                     $settings->save();
-
-                    $this->notify('success', 'RFM settings saved.');
+                    
+                    Notification::make()
+                        ->title('RFM settings saved.')
+                        ->success()
+                        ->send();
                 })
                 ->color('success'),
 
@@ -140,7 +159,7 @@ class SetupWizard extends Page
         ];
     }
 
-    protected function calculateSegments(): void
+    public function calculateSegments(): void
     {
         $settings = app(GeneralSettings::class);
         if (! $settings->rfm_enable) {
@@ -216,7 +235,10 @@ class SetupWizard extends Page
         // Sort by customers desc
         $this->segmentStats = collect($stats)->sortByDesc('customers')->values()->toArray();
 
-        $this->notify('success', 'Customer segments calculated.');
+        Notification::make()
+            ->title('Customer segments calculated.')
+            ->success()
+            ->send();
     }
 
     protected function quantileBreaks(array $values, int $bins): array
@@ -284,15 +306,5 @@ class SetupWizard extends Page
         }
 
         return 'Need Attention';
-    }
-
-    public function saveRfmSettings(): void
-    {
-        $settings = app(\App\Settings\GeneralSettings::class);
-        $settings->rfm_enable = (bool) ($this->rfm['rfm_enable'] ?? true);
-        $settings->rfm_bins = (int) ($this->rfm['rfm_bins'] ?? 5);
-        $settings->save();
-
-        $this->notify('success', 'RFM settings saved.');
     }
 }
