@@ -1,0 +1,4 @@
+id,first_name,last_name,email,phone,country,state,city,region,birthday,gender,channel,created_at
+CUST-001,John,Doe,john.doe@example.com,+1-555-0101,USA,California,Los Angeles,West,1985-03-15,M,online,2023-06-10 08:00:00
+CUST-002,Jane,Smith,jane.smith@example.com,+1-555-0102,USA,New York,New York City,East,1990-07-22,F,retail,2023-08-22 10:30:00
+CUST-003,Bob,Johnson,bob.johnson@example.com,+1-555-0103,USA,Texas,Houston,South,1978-11-05,M,online,2024-01-05 14:15:00
