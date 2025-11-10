@@ -62,27 +62,27 @@ class SetupWizard extends Page
                 ->persistStepInQueryString('setup_step')
                 ->steps([
                     Step::make('Import CSVs')->schema([
-                        Section::make('Example CSV Files')
-                            ->description('Download example files to see the correct format.')
+                        Section::make('Import Data')
+                            ->description('Download example CSVs and import your files in order.')
                             ->schema([
                                 \Filament\Schemas\Components\Html::make('
                                     <div class="space-y-2 text-sm">
-                                        <p class="font-medium text-neutral-700 dark:text-neutral-300">Download example CSV templates:</p>
+                                        <p class="font-medium text-neutral-700 dark:text-neutral-300">Example CSV templates:</p>
                                         <ul class="list-disc list-inside space-y-1 text-neutral-600 dark:text-neutral-400">
                                             <li><a href="/examples/customers_example.csv" download class="text-primary-600 hover:underline">customers_example.csv</a></li>
                                             <li><a href="/examples/products_example.csv" download class="text-primary-600 hover:underline">products_example.csv</a></li>
                                             <li><a href="/examples/orders_example.csv" download class="text-primary-600 hover:underline">orders_example.csv</a></li>
                                             <li><a href="/examples/order_items_example.csv" download class="text-primary-600 hover:underline">order_items_example.csv</a></li>
                                         </ul>
-                                        <p class="text-xs text-neutral-500 mt-2">💡 Import customers and products first, then orders and order items.</p>
+                                        <p class="text-xs text-neutral-500 mt-2">Import customers and products first, then orders and order items.</p>
                                     </div>
                                 '),
-                            ]),
-
-                        Section::make('Import Data')
-                            ->description('Upload your CSV files in the correct order.')
-                            ->schema([
-                                \Filament\Schemas\Components\Html::make('<p class="text-sm text-neutral-600 dark:text-neutral-400">Use the buttons below to import your data files.</p>'),
+                                Grid::make(4)->schema([
+                                    \Filament\Schemas\Components\Text::make('Customers: '.\App\Models\Customer::count())->badge(true),
+                                    \Filament\Schemas\Components\Text::make('Products: '.\App\Models\Product::count())->badge(true),
+                                    \Filament\Schemas\Components\Text::make('Orders: '.\App\Models\Order::count())->badge(true),
+                                    \Filament\Schemas\Components\Text::make('Order Items: '.\App\Models\OrderItem::count())->badge(true),
+                                ]),
                             ])
                             ->footerActionsAlignment(\Filament\Support\Enums\Alignment::Center)
                             ->footerActions([
@@ -91,42 +91,55 @@ class SetupWizard extends Page
                                     ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
                                     ->color('success')
                                     ->importer(\App\Filament\Imports\CustomerImporter::class)
+                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        <div class="text-sm space-y-2">
+                                            <p>Please upload a CSV file matching the expected columns.</p>
+                                            <p>Download example: <a href="/examples/customers_example.csv" download class="text-primary-600 hover:underline">customers_example.csv</a></p>
+                                        </div>
+                                    '))
                                     ->after(fn () => $this->forceRender()),
                                 ImportAction::make('import_products')
                                     ->label('2. Import Products')
                                     ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
                                     ->color('warning')
                                     ->importer(\App\Filament\Imports\ProductImporter::class)
+                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        <div class="text-sm space-y-2">
+                                            <p>Please upload a CSV file matching the expected columns.</p>
+                                            <p>Download example: <a href="/examples/products_example.csv" download class="text-primary-600 hover:underline">products_example.csv</a></p>
+                                        </div>
+                                    '))
                                     ->after(fn () => $this->forceRender()),
                                 ImportAction::make('import_orders')
                                     ->label('3. Import Orders')
                                     ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
                                     ->color('primary')
                                     ->importer(\App\Filament\Imports\OrderImporter::class)
+                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        <div class="text-sm space-y-2">
+                                            <p>Please upload a CSV file matching the expected columns.</p>
+                                            <p>Download example: <a href="/examples/orders_example.csv" download class="text-primary-600 hover:underline">orders_example.csv</a></p>
+                                        </div>
+                                    '))
                                     ->after(fn () => $this->forceRender()),
                                 ImportAction::make('import_order_items')
                                     ->label('4. Import Order Items')
                                     ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
                                     ->color('gray')
                                     ->importer(\App\Filament\Imports\OrderItemImporter::class)
+                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        <div class="text-sm space-y-2">
+                                            <p>Please upload a CSV file matching the expected columns.</p>
+                                            <p>Download example: <a href="/examples/order_items_example.csv" download class="text-primary-600 hover:underline">order_items_example.csv</a></p>
+                                        </div>
+                                    '))
                                     ->after(fn () => $this->forceRender()),
-                            ]),
-
-                        Section::make('Import Progress')
-                            ->description('Quick status of imported records.')
-                            ->schema([
-                                Grid::make(4)->schema([
-                                    \Filament\Schemas\Components\Text::make('Customers: '.\App\Models\Customer::count())->badge(true),
-                                    \Filament\Schemas\Components\Text::make('Products: '.\App\Models\Product::count())->badge(true),
-                                    \Filament\Schemas\Components\Text::make('Orders: '.\App\Models\Order::count())->badge(true),
-                                    \Filament\Schemas\Components\Text::make('Order Items: '.\App\Models\OrderItem::count())->badge(true),
-                                ]),
                             ]),
                     ]),
 
                     Step::make('RFM Settings')->schema([
-                        Section::make('Segmentation Configuration')
-                            ->description('Configure how customer segments are calculated and analyzed.')
+                        Section::make('RFM Settings')
+                            ->description('Configure segmentation granularity and analysis timeframe.')
                             ->schema([
                                 \Filament\Schemas\Components\Form::make()->schema([
                                     Toggle::make('rfm.rfm_enable')
@@ -142,8 +155,7 @@ class SetupWizard extends Page
                                                 11 => '11 Segments (Advanced: Detailed Customer Journey)',
                                             ])
                                             ->default(5)
-                                            ->required()
-                                            ->hint('Choose segment granularity for your analysis.'),
+                                            ->required(),
                                         Select::make('rfm.rfm_timeframe_days')
                                             ->label('Analysis Timeframe')
                                             ->options([
@@ -154,16 +166,14 @@ class SetupWizard extends Page
                                                 1825 => 'Last 5 Years (All Time)',
                                             ])
                                             ->default(365)
-                                            ->required()
-                                            ->hint('Time window for RFM calculations.'),
+                                            ->required(),
                                     ]),
                                     TextInput::make('rfm.rfm_bins')
                                         ->label('RFM Bins (Quantiles)')
                                         ->numeric()
                                         ->minValue(2)
                                         ->maxValue(9)
-                                        ->default(5)
-                                        ->hint('Number of quantile bins for scoring R, F, and M.'),
+                                        ->default(5),
                                 ]),
                             ]),
                         Section::make('Apply Settings')
@@ -174,14 +184,10 @@ class SetupWizard extends Page
                     ]),
 
                     Step::make('Calculate & Review')->schema([
-                        Section::make('Run Segmentation')
-                            ->description('Classify customers and analyze segment performance.')
+                        Section::make('RFM Analysis')
+                            ->description('Run segmentation and review the results.')
                             ->schema([
                                 \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-run-calc'),
-                            ]),
-                        Section::make('RFM Analysis Results')
-                            ->description('Interactive charts and detailed segment statistics.')
-                            ->schema([
                                 \Filament\Schemas\Components\View::make('filament.pages.rfm-results')
                                     ->viewData(fn () => ['stats' => $this->segmentStats]),
                             ]),

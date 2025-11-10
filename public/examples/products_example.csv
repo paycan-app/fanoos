@@ -1,6 +1,21 @@
 id,name,description,price,sku,category,stock,created_at
-PROD-101,Wireless Headphones,Premium noise-canceling wireless headphones,79.99,WH-NC-001,Electronics,150,2023-01-01 00:00:00
-PROD-102,Smart Watch,Fitness tracking smartwatch with heart rate monitor,89.50,SW-FT-002,Electronics,200,2023-01-01 00:00:00
-PROD-103,Running Shoes,Lightweight running shoes with cushioned sole,83.33,RS-LW-003,Footwear,100,2023-01-01 00:00:00
-PROD-104,Yoga Mat,Non-slip eco-friendly yoga mat,62.87,YM-EF-004,Fitness,75,2023-01-01 00:00:00
-PROD-105,Water Bottle,Insulated stainless steel water bottle,0.01,WB-SS-005,Accessories,300,2023-01-01 00:00:00
+1,Cherry Pie,"A slice of pie that's a slice of heaven.",2.50,TP-PIE-CH,Food,100,2025-01-10 08:00:00
+2,Damn Good Coffee,"Hot, black, and as good as it gets.",1.50,TP-COF-BLK,Beverage,250,2025-01-10 08:00:00
+3,Donut,"A dozen donuts, perfect for a stakeout.",1.00,TP-DON-GLZ,Food,300,2025-01-11 09:00:00
+4,Log,"It saw something that night.",15.00,TP-LOG-LRG,Mysteries,1,2025-01-11 09:00:00
+5,Percolator,"For brewing that damn good coffee.",75.00,TP-PERC-01,Appliances,20,2025-01-12 10:00:00
+6,Red Room Curtain,"Iconic red curtain from the Black Lodge.",120.00,TP-CUR-RED,Decor,15,2025-01-12 10:00:00
+7,Black Lodge Floor Tile,"A single tile with the iconic chevron pattern.",25.00,TP-TILE-BLK,Decor,50,2025-01-13 11:00:00
+8,Sawmill Blade,"A relic from the Packard Sawmill.",250.00,TP-SAW-BLD,Industrial,5,2025-01-13 11:00:00
+9,Fish in a Percolator,"A quirky, unforgettable decorative item.",5.00,TP-FISH-PERC,Novelty,30,2025-01-14 12:00:00
+10,Silent Drape Runners,"The quietest drape runners you'll never hear.",45.00,TP-DRP-RUN,Hardware,40,2025-01-14 12:00:00
+11,Huckleberry Pie,"A delicious alternative to cherry.",3.00,TP-PIE-HUCK,Food,80,2025-02-01 08:30:00
+12,Bookhouse Boys Patch,"An embroidered patch for members of the secret society.",12.50,TP-PATCH-BHB,Apparel,150,2025-02-01 08:30:00
+13,One-Eyed Jack's Poker Chip,"A souvenir from the infamous casino.",7.50,TP-CHIP-OEJ,Memorabilia,200,2025-02-02 09:30:00
+14,Great Northern Hotel Key,"A vintage-style key from the iconic hotel.",22.00,TP-KEY-GNH,Memorabilia,75,2025-02-02 09:30:00
+15,Laura's Diary,"A replica of Laura Palmer's secret diary.",18.00,TP-DIARY-LP,Books,60,2025-02-03 10:30:00
+16,Owl Cave Map,"A map detailing the mysterious Owl Cave.",35.00,TP-MAP-OC,Mysteries,25,2025-02-03 10:30:00
+17,Log Lady's Log,"A smaller, more portable log for your own insights.",50.00,TP-LOG-SML,Mysteries,10,2025-02-04 11:30:00
+18,Ghostwood National Forest Sign,"A replica of the forest entrance sign.",80.00,TP-SIGN-GNF,Decor,12,2025-02-04 11:30:00
+19,RR Diner Mug,"The classic mug from the Double R Diner.",14.00,TP-MUG-RR,Kitchenware,120,2025-02-05 12:30:00
+20,Welcome to Twin Peaks Sign,"A full-size replica of the iconic town sign.",150.00,TP-SIGN-WTP,Decor,8,2025-02-05 12:30:00

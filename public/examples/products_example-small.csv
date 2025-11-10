@@ -1,0 +1,6 @@
+id,title,description,price,sku,category,stock,created_at
+PROD-101,Wireless Headphones,Premium noise-canceling wireless headphones,79.99,WH-NC-001,Electronics,150,2023-01-01 00:00:00
+PROD-102,Smart Watch,Fitness tracking smartwatch with heart rate monitor,89.50,SW-FT-002,Electronics,200,2023-01-01 00:00:00
+PROD-103,Running Shoes,Lightweight running shoes with cushioned sole,83.33,RS-LW-003,Footwear,100,2023-01-01 00:00:00
+PROD-104,Yoga Mat,Non-slip eco-friendly yoga mat,62.87,YM-EF-004,Fitness,75,2023-01-01 00:00:00
+PROD-105,Water Bottle,Insulated stainless steel water bottle,0.01,WB-SS-005,Accessories,300,2023-01-01 00:00:00
