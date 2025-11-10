@@ -621,4 +621,348 @@ class RfmService
 
         return $this->buildTransitionsMatrixForIntervals($baselineStart, $baselineEnd, $comparisonStart, $comparisonEnd);
     }
+
+    /**
+     * Get segment definitions with business context for tooltips
+     */
+    public function getSegmentDefinitions(): array
+    {
+        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
+
+        return match ($segmentCount) {
+            3 => $this->getThreeSegmentDefinitions(),
+            5 => $this->getFiveSegmentDefinitions(),
+            11 => $this->getElevenSegmentDefinitions(),
+            default => $this->getFiveSegmentDefinitions(),
+        };
+    }
+
+    protected function getThreeSegmentDefinitions(): array
+    {
+        return [
+            'High Value' => [
+                'description' => 'Your best customers with high overall scores',
+                'criteria' => 'Average RFM score ≥ 4',
+                'business_action' => 'Focus: VIP treatment, exclusive offers, early access to new products',
+                'color' => 'green',
+            ],
+            'Medium Value' => [
+                'description' => 'Moderate engagement customers with growth potential',
+                'criteria' => 'Average RFM score between 2.5 and 4',
+                'business_action' => 'Focus: Upsell opportunities, engagement campaigns, loyalty programs',
+                'color' => 'yellow',
+            ],
+            'Low Value' => [
+                'description' => 'Low engagement or at-risk customers',
+                'criteria' => 'Average RFM score < 2.5',
+                'business_action' => 'Focus: Win-back campaigns, reactivation offers, feedback surveys',
+                'color' => 'red',
+            ],
+        ];
+    }
+
+    protected function getFiveSegmentDefinitions(): array
+    {
+        return [
+            'Champions' => [
+                'description' => 'Your best customers! Recent buyers, frequent orders, high spend',
+                'criteria' => 'R ≥ 4, F ≥ 4, M ≥ 4',
+                'business_action' => 'Focus: Retention, VIP treatment, referral programs, exclusive rewards',
+                'color' => 'green',
+            ],
+            'Loyal Customers' => [
+                'description' => 'Regular customers with high value and frequency',
+                'criteria' => 'F ≥ 4, M ≥ 4',
+                'business_action' => 'Focus: Upsell, cross-sell, loyalty programs, personalized offers',
+                'color' => 'blue',
+            ],
+            'Potential Loyalist' => [
+                'description' => 'Recent customers showing good potential',
+                'criteria' => 'R ≥ 4, (F ≥ 3 OR M ≥ 3)',
+                'business_action' => 'Focus: Engagement campaigns, product recommendations, build relationship',
+                'color' => 'cyan',
+            ],
+            'At Risk' => [
+                'description' => 'Haven\'t purchased recently, risk of churn',
+                'criteria' => 'R ≤ 2',
+                'business_action' => 'Focus: Win-back campaigns, special discounts, re-engagement emails',
+                'color' => 'orange',
+            ],
+            'Need Attention' => [
+                'description' => 'Below average customers requiring nurturing',
+                'criteria' => 'All others not matching above criteria',
+                'business_action' => 'Focus: Surveys, feedback collection, targeted campaigns, value demonstration',
+                'color' => 'yellow',
+            ],
+        ];
+    }
+
+    protected function getElevenSegmentDefinitions(): array
+    {
+        return [
+            'Champions' => [
+                'description' => 'Your absolute best customers - high recency, frequency, and monetary',
+                'criteria' => 'R ≥ 4, F ≥ 4, M ≥ 4',
+                'business_action' => 'Reward them! VIP programs, early access, exclusive offers, referral incentives',
+                'color' => 'green',
+            ],
+            'Loyal Customers' => [
+                'description' => 'Regular high-value customers who buy frequently',
+                'criteria' => 'R ≥ 3, F ≥ 4, M ≥ 4',
+                'business_action' => 'Upsell premium products, cross-sell, loyalty rewards, personalization',
+                'color' => 'blue',
+            ],
+            'Potential Loyalist' => [
+                'description' => 'Recent customers with good spending and frequency',
+                'criteria' => 'R ≥ 4, F ≥ 3, M ≥ 3',
+                'business_action' => 'Build relationship, recommend products, engage on social media',
+                'color' => 'cyan',
+            ],
+            'New Customers' => [
+                'description' => 'Recently acquired but haven\'t made many purchases yet',
+                'criteria' => 'R ≥ 4, F ≤ 2, M ≤ 2',
+                'business_action' => 'Onboard properly, provide support, encourage second purchase',
+                'color' => 'purple',
+            ],
+            'Promising' => [
+                'description' => 'Recent buyers showing consistent engagement',
+                'criteria' => 'R ≥ 3, F ≥ 3, M ≥ 3',
+                'business_action' => 'Create brand advocates, engage frequently, offer value',
+                'color' => 'indigo',
+            ],
+            'Customers Needing Attention' => [
+                'description' => 'Recent but low engagement - need nurturing',
+                'criteria' => 'R ≥ 3, F ≤ 2, M ≤ 2',
+                'business_action' => 'Gather feedback, address concerns, demonstrate value',
+                'color' => 'yellow',
+            ],
+            'About To Sleep' => [
+                'description' => 'Risk of losing - were good customers but becoming inactive',
+                'criteria' => 'R ≤ 2, F ≥ 3, M ≥ 3',
+                'business_action' => 'Win-back campaigns, reactivation offers, personalized outreach',
+                'color' => 'orange',
+            ],
+            'At Risk' => [
+                'description' => 'Not recent, declining engagement - intervention needed',
+                'criteria' => 'R ≤ 2, F ≥ 2, M ≥ 2',
+                'business_action' => 'Limited time offers, surveys, re-engagement series',
+                'color' => 'red-light',
+            ],
+            'Cannot Lose Them' => [
+                'description' => 'High spenders who haven\'t purchased recently - critical!',
+                'criteria' => 'R ≤ 2, F ≤ 2, M ≥ 4',
+                'business_action' => 'Aggressive win-back, personal contact, premium incentives',
+                'color' => 'red',
+            ],
+            'Hibernating' => [
+                'description' => 'Very inactive customers - difficult to recover',
+                'criteria' => 'R ≤ 1, F ≤ 2',
+                'business_action' => 'Last-chance campaigns, surveys, consider pruning list',
+                'color' => 'gray',
+            ],
+            'Lost' => [
+                'description' => 'No recent activity or zero engagement',
+                'criteria' => 'No orders, frequency = 0, or monetary = 0',
+                'business_action' => 'Final win-back attempt, then remove from active campaigns',
+                'color' => 'gray-dark',
+            ],
+        ];
+    }
+
+    /**
+     * Generate actionable insights by comparing current and previous RFM analysis
+     */
+    public function getInsights(array $currentStats, array $previousStats, Carbon $currentDate, Carbon $previousDate): array
+    {
+        $insights = [];
+
+        // Build lookup maps
+        $currentMap = collect($currentStats)->keyBy('segment');
+        $previousMap = collect($previousStats)->keyBy('segment');
+
+        // Total customer comparison
+        $totalCurrent = collect($currentStats)->sum('customers');
+        $totalPrevious = collect($previousStats)->sum('customers');
+        $customerGrowth = $totalPrevious > 0 ? (($totalCurrent - $totalPrevious) / $totalPrevious) * 100 : 0;
+
+        // 1. High-value churn detection
+        $highValueSegments = ['Champions', 'Loyal Customers', 'Cannot Lose Them', 'High Value'];
+        $atRiskSegments = ['At Risk', 'About To Sleep', 'Hibernating', 'Lost', 'Low Value'];
+
+        foreach ($highValueSegments as $segment) {
+            $current = $currentMap->get($segment);
+            $previous = $previousMap->get($segment);
+
+            if ($current && $previous) {
+                $change = $current['customers'] - $previous['customers'];
+                $percentChange = $previous['customers'] > 0 ? ($change / $previous['customers']) * 100 : 0;
+
+                if ($change < 0 && abs($percentChange) > 10) {
+                    $insights[] = [
+                        'type' => 'alert',
+                        'icon' => '⚠️',
+                        'title' => "High-Value Customer Decline in {$segment}",
+                        'message' => abs($change)." customers left {$segment} segment (".round($percentChange, 1)."% decline)",
+                        'tooltip' => "Compared {$segment} segment between ".
+                            $previousDate->format('M d, Y')." ({$previous['customers']} customers) and ".
+                            $currentDate->format('M d, Y')." ({$current['customers']} customers). ".
+                            "This represents a potential revenue risk of $".number_format(abs($change) * ($previous['avg_monetary'] ?? 0), 2),
+                        'priority' => 'high',
+                    ];
+                }
+            }
+        }
+
+        // 2. Upgrade opportunities
+        $upgradeableSegments = ['Potential Loyalist', 'Promising', 'Need Attention', 'Medium Value'];
+        foreach ($upgradeableSegments as $segment) {
+            $current = $currentMap->get($segment);
+            if ($current && $current['customers'] > 0 && $current['customers'] >= 10) {
+                $insights[] = [
+                    'type' => 'opportunity',
+                    'icon' => '💡',
+                    'title' => "Upgrade Opportunity in {$segment}",
+                    'message' => "{$current['customers']} customers ready for engagement to move to higher tiers",
+                    'tooltip' => "These {$current['customers']} customers in {$segment} show strong potential. ".
+                        "Average spend: $".number_format($current['avg_monetary'], 2).". ".
+                        "Focus on personalized campaigns and upsell opportunities.",
+                    'priority' => 'medium',
+                ];
+                break; // Only show one opportunity to avoid clutter
+            }
+        }
+
+        // 3. Win-back targets
+        foreach ($atRiskSegments as $segment) {
+            $current = $currentMap->get($segment);
+            if ($current && $current['customers'] > 0 && in_array($segment, ['Lost', 'Hibernating'])) {
+                $potentialRevenue = $current['customers'] * ($current['avg_monetary'] ?? 0);
+                if ($potentialRevenue > 1000) {
+                    $insights[] = [
+                        'type' => 'action',
+                        'icon' => '📧',
+                        'title' => "Win-Back Campaign Recommended for {$segment}",
+                        'message' => "{$current['customers']} inactive customers represent $".number_format($potentialRevenue, 2)." potential recovery",
+                        'tooltip' => "Customers in {$segment} segment haven't purchased recently but have historical value. ".
+                            "Recommended action: Launch targeted win-back campaign with special incentives. ".
+                            "Average historical spend: $".number_format($current['avg_monetary'], 2).".",
+                        'priority' => 'medium',
+                    ];
+                    break;
+                }
+            }
+        }
+
+        // 4. Recovery successes
+        $successSegments = ['Champions', 'Loyal Customers', 'Promising'];
+        foreach ($successSegments as $segment) {
+            $current = $currentMap->get($segment);
+            $previous = $previousMap->get($segment);
+
+            if ($current && $previous) {
+                $change = $current['customers'] - $previous['customers'];
+                $percentChange = $previous['customers'] > 0 ? ($change / $previous['customers']) * 100 : 0;
+
+                if ($change > 0 && $percentChange > 15) {
+                    $insights[] = [
+                        'type' => 'success',
+                        'icon' => '✅',
+                        'title' => "Growth Success in {$segment}",
+                        'message' => "{$change} customers upgraded to {$segment} (+".round($percentChange, 1)."%)",
+                        'tooltip' => "Between ".
+                            $previousDate->format('M d, Y')." and ".$currentDate->format('M d, Y').", ".
+                            "{$change} customers moved into {$segment}. Continue successful strategies that drove this improvement.",
+                        'priority' => 'low',
+                    ];
+                    break;
+                }
+            }
+        }
+
+        // 5. Overall growth/decline
+        if (abs($customerGrowth) > 5) {
+            $insights[] = [
+                'type' => $customerGrowth > 0 ? 'success' : 'alert',
+                'icon' => $customerGrowth > 0 ? '📈' : '📉',
+                'title' => 'Overall Customer Base '.($customerGrowth > 0 ? 'Growth' : 'Decline'),
+                'message' => abs($totalCurrent - $totalPrevious)." customers (".($customerGrowth > 0 ? '+' : '').round($customerGrowth, 1)."%)",
+                'tooltip' => "Total active customers changed from {$totalPrevious} (".
+                    $previousDate->format('M d, Y').") to {$totalCurrent} (".
+                    $currentDate->format('M d, Y')."). ".
+                    "This is calculated by comparing customers with at least one order in each respective analysis period.",
+                'priority' => abs($customerGrowth) > 15 ? 'high' : 'medium',
+            ];
+        }
+
+        // If no insights, provide a positive message
+        if (empty($insights)) {
+            $insights[] = [
+                'type' => 'info',
+                'icon' => 'ℹ️',
+                'title' => 'Stable Customer Base',
+                'message' => 'No significant changes detected between analysis periods',
+                'tooltip' => "Compared RFM analysis from ".
+                    $previousDate->format('M d, Y')." to ".$currentDate->format('M d, Y').". ".
+                    "Customer segments remain relatively stable with no major shifts requiring immediate action.",
+                'priority' => 'low',
+            ];
+        }
+
+        // Sort by priority
+        $priorityOrder = ['high' => 1, 'medium' => 2, 'low' => 3];
+        usort($insights, fn ($a, $b) => ($priorityOrder[$a['priority']] ?? 99) <=> ($priorityOrder[$b['priority']] ?? 99));
+
+        return $insights;
+    }
+
+    /**
+     * Get metric definitions for tooltips
+     */
+    public function getMetricDefinitions(): array
+    {
+        return [
+            'recency' => [
+                'name' => 'Recency',
+                'description' => 'Days since last purchase (lower = more recent = better)',
+                'business_meaning' => 'Recent customers are more likely to purchase again and respond to marketing',
+                'calculation' => 'Calculated as days between the last order date and analysis date',
+            ],
+            'frequency' => [
+                'name' => 'Frequency',
+                'description' => 'Number of orders in analysis period (higher = more loyal)',
+                'business_meaning' => 'Frequent buyers are your most engaged and loyal customers',
+                'calculation' => 'Total count of orders within the specified timeframe',
+            ],
+            'monetary' => [
+                'name' => 'Monetary',
+                'description' => 'Total amount spent in analysis period (higher = more valuable)',
+                'business_meaning' => 'High spenders contribute most to revenue and lifetime value',
+                'calculation' => 'Sum of all order totals within the specified timeframe',
+            ],
+            'total_revenue' => [
+                'name' => 'Total Revenue',
+                'description' => 'Sum of all customer lifetime values in analysis period',
+                'business_meaning' => 'Represents total sales generated by active customers',
+                'calculation' => 'Sum of all customers\' monetary values across all segments',
+            ],
+            'total_customers' => [
+                'name' => 'Total Customers',
+                'description' => 'Active customers with at least one order in timeframe',
+                'business_meaning' => 'Your engaged customer base size during the analysis period',
+                'calculation' => 'Count of unique customers with frequency > 0',
+            ],
+            'avg_value' => [
+                'name' => 'Average Customer Value',
+                'description' => 'Average monetary spend per customer (total revenue ÷ customers)',
+                'business_meaning' => 'Indicates the typical value each customer brings to your business',
+                'calculation' => 'Total Revenue divided by Total Customers',
+            ],
+            'active_segments' => [
+                'name' => 'Active Segments',
+                'description' => 'Number of segments with customers (out of maximum possible)',
+                'business_meaning' => 'Shows diversity of your customer base across different behavior patterns',
+                'calculation' => 'Count of segments with at least one customer',
+            ],
+        ];
+    }
 }

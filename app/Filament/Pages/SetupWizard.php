@@ -41,6 +41,22 @@ class SetupWizard extends Page
 
     public array $segmentStats = [];
 
+    public array $previousSegmentStats = [];
+
+    public array $insights = [];
+
+    public array $segmentDefinitions = [];
+
+    public array $metricDefinitions = [];
+
+    public array $marimekkoData = [];
+
+    public array $transitionsData = [];
+
+    public ?string $currentAnalysisDate = null;
+
+    public ?string $previousAnalysisDate = null;
+
     public function mount(): void
     {
         $settings = app(GeneralSettings::class);
@@ -49,6 +65,11 @@ class SetupWizard extends Page
         $this->rfm['rfm_segments'] = $settings->rfm_segments;
         $this->rfm['rfm_timeframe_days'] = $settings->rfm_timeframe_days;
         $this->rfm['analysis_date'] = now()->toDateString();
+
+        // Load segment definitions and metric definitions
+        $rfmService = app(RfmService::class);
+        $this->segmentDefinitions = $rfmService->getSegmentDefinitions();
+        $this->metricDefinitions = $rfmService->getMetricDefinitions();
     }
 
     public function content(Schema $schema): Schema
@@ -227,7 +248,17 @@ class SetupWizard extends Page
                             ->schema([
                                 \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-run-calc'),
                                 \Filament\Schemas\Components\View::make('filament.pages.rfm-results')
-                                    ->viewData(fn () => ['stats' => $this->segmentStats]),
+                                    ->viewData(fn () => [
+                                        'stats' => $this->segmentStats,
+                                        'previousStats' => $this->previousSegmentStats,
+                                        'insights' => $this->insights,
+                                        'segmentDefinitions' => $this->segmentDefinitions,
+                                        'metricDefinitions' => $this->metricDefinitions,
+                                        'marimekkoData' => $this->marimekkoData,
+                                        'transitionsData' => $this->transitionsData,
+                                        'currentAnalysisDate' => $this->currentAnalysisDate,
+                                        'previousAnalysisDate' => $this->previousAnalysisDate,
+                                    ]),
                             ]),
                     ]),
                 ]),
@@ -277,8 +308,14 @@ class SetupWizard extends Page
     public function calculateSegments(): void
     {
         $rfmService = app(RfmService::class);
-        $analysisDate = $this->rfm['analysis_date'] ? \Carbon\Carbon::parse($this->rfm['analysis_date']) : null;
-        $this->segmentStats = $rfmService->calculateSegments(asOfDate: $analysisDate);
+        $analysisDate = $this->rfm['analysis_date'] ? \Carbon\Carbon::parse($this->rfm['analysis_date']) : now();
+        $timeframeDays = (int) ($this->rfm['rfm_timeframe_days'] ?? 365);
+
+        // Calculate current period segments
+        $this->segmentStats = $rfmService->calculateSegments(
+            timeframeDays: $timeframeDays,
+            asOfDate: $analysisDate
+        );
 
         if (isset($this->segmentStats['message'])) {
             Notification::make()
@@ -289,9 +326,54 @@ class SetupWizard extends Page
             return;
         }
 
+        $this->currentAnalysisDate = $analysisDate->format('Y-m-d');
+
+        // Calculate previous period for comparison
+        $previousDate = $analysisDate->copy()->subDays($timeframeDays);
+        $this->previousAnalysisDate = $previousDate->format('Y-m-d');
+
+        $this->previousSegmentStats = $rfmService->calculateSegments(
+            timeframeDays: $timeframeDays,
+            asOfDate: $previousDate
+        );
+
+        // Generate insights by comparing periods
+        if (!isset($this->previousSegmentStats['message']) && !empty($this->previousSegmentStats)) {
+            $this->insights = $rfmService->getInsights(
+                $this->segmentStats,
+                $this->previousSegmentStats,
+                $analysisDate,
+                $previousDate
+            );
+        } else {
+            $this->insights = [];
+        }
+
+        // Build Marimekko data for monetary distribution
+        $this->marimekkoData = $rfmService->buildMarimekkoByMonetary(
+            timeframeDays: $timeframeDays,
+            asOfDate: $analysisDate
+        );
+
+        // Build transitions matrix if we have both periods
+        if (!empty($this->previousSegmentStats) && !isset($this->previousSegmentStats['message'])) {
+            $this->transitionsData = $rfmService->buildTransitionsMatrixForAsOfDates(
+                $previousDate,
+                $analysisDate
+            );
+        } else {
+            $this->transitionsData = ['labels' => [], 'matrix' => [], 'total' => 0];
+        }
+
+        // Reload segment definitions in case settings changed
+        $this->segmentDefinitions = $rfmService->getSegmentDefinitions();
+
+        // Count total customers updated
+        $totalCustomers = collect($this->segmentStats)->sum('customers');
+
         Notification::make()
             ->title('Customer segments calculated successfully!')
-            ->body('Analysis date: '.($analysisDate?->format('Y-m-d') ?? 'Today'))
+            ->body("Analysis complete: {$totalCustomers} customers segmented. Customers table updated with new segments.")
             ->success()
             ->send();
 
