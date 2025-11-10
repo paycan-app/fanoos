@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Customer;
 use App\Settings\GeneralSettings;
+use Carbon\Carbon;
 
 class RfmService
 {
@@ -202,11 +203,11 @@ class RfmService
         }
 
         if ($f >= 4 && $m >= 4) {
-            return 'Loyal';
+            return 'Loyal Customers';
         }
 
-        if ($r >= 4) {
-            return 'Potential';
+        if ($r >= 4 && ($f >= 3 || $m >= 3)) {
+            return 'Potential Loyalist';
         }
 
         if ($r <= 2) {
@@ -281,5 +282,327 @@ class RfmService
                 ];
             })
             ->toArray();
+    }
+
+    public function classifySegmentsMap(?int $timeframeDays = null, bool $save = false): array
+    {
+        if (! $this->settings->rfm_enable) {
+            return [];
+        }
+
+        $bins = max(2, min(9, $this->settings->rfm_bins));
+        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
+        $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+
+        $customers = Customer::query()->with('orders')->get();
+
+        $recencies = [];
+        $frequencies = [];
+        $monetaries = [];
+
+        foreach ($customers as $c) {
+            $r = $this->calculateRecency($c, $timeframe);
+            $f = $this->calculateFrequency($c, $timeframe);
+            $m = $this->calculateMonetary($c, $timeframe);
+
+            if ($r !== null) {
+                $recencies[] = $r;
+            }
+            $frequencies[] = $f;
+            $monetaries[] = $m;
+        }
+
+        $rBreaks = $this->quantileBreaks($recencies, $bins);
+        $fBreaks = $this->quantileBreaks($frequencies, $bins);
+        $mBreaks = $this->quantileBreaks($monetaries, $bins);
+
+        $map = [];
+
+        foreach ($customers as $c) {
+            $r = $this->calculateRecency($c, $timeframe);
+            $f = $this->calculateFrequency($c, $timeframe);
+            $m = $this->calculateMonetary($c, $timeframe);
+
+            $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
+            $fScore = $this->scoreValue($f, $fBreaks, $bins);
+            $mScore = $this->scoreValue($m, $mBreaks, $bins);
+
+            $segment = $this->assignSegment($rScore, $fScore, $mScore, $r, $f, $m, $segmentCount);
+
+            if ($save) {
+                $c->segment = $segment;
+                $c->save();
+            }
+
+            $map[$c->id] = [
+                'segment' => $segment,
+                'r' => $r,
+                'f' => $f,
+                'm' => $m,
+                'rScore' => $rScore,
+                'fScore' => $fScore,
+                'mScore' => $mScore,
+            ];
+        }
+
+        return $map;
+    }
+
+    public function buildMarimekkoByMonetary(?int $timeframeDays = null): array
+    {
+        if (! $this->settings->rfm_enable) {
+            return ['segments' => [], 'binLabels' => [], 'total' => 0];
+        }
+
+        $bins = max(2, min(9, $this->settings->rfm_bins));
+        $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+
+        $map = $this->classifySegmentsMap($timeframe, save: false);
+        if (empty($map)) {
+            return ['segments' => [], 'binLabels' => [], 'total' => 0];
+        }
+
+        $mValues = array_map(fn ($row) => $row['m'], $map);
+        $mBreaks = $this->quantileBreaks($mValues, $bins);
+        $binLabels = [];
+        for ($i = 1; $i <= $bins; $i++) {
+            $binLabels[] = 'M' . $i;
+        }
+
+        $segmentCounts = [];
+        $segmentsBins = [];
+
+        foreach ($map as $row) {
+            $segment = $row['segment'];
+            $scoreM = $this->scoreValue($row['m'], $mBreaks, $bins);
+            $label = 'M' . $scoreM;
+
+            $segmentCounts[$segment] = ($segmentCounts[$segment] ?? 0) + 1;
+            $segmentsBins[$segment] = $segmentsBins[$segment] ?? [];
+            $segmentsBins[$segment][$label] = ($segmentsBins[$segment][$label] ?? 0) + 1;
+        }
+
+        $total = array_sum($segmentCounts);
+        $segments = [];
+
+        foreach ($segmentCounts as $segment => $count) {
+            $share = $total > 0 ? $count / $total : 0.0;
+            $binShares = [];
+            foreach ($binLabels as $label) {
+                $binCount = $segmentsBins[$segment][$label] ?? 0;
+                $binShares[$label] = $count > 0 ? $binCount / $count : 0.0;
+            }
+
+            $segments[] = [
+                'key' => $segment,
+                'customers' => $count,
+                'share' => round($share, 6),
+                'bins' => $binShares,
+            ];
+        }
+
+        return [
+            'segments' => $segments,
+            'binLabels' => $binLabels,
+            'total' => $total,
+        ];
+    }
+
+    public function buildTransitionsMatrix(int $baselineDays, int $comparisonDays): array
+    {
+        if (! $this->settings->rfm_enable) {
+            return ['labels' => [], 'matrix' => [], 'total' => 0];
+        }
+
+        $oldMap = $this->classifySegmentsMap($baselineDays, save: false);
+        $newMap = $this->classifySegmentsMap($comparisonDays, save: false);
+
+        $labelsSet = [];
+        foreach ($oldMap as $row) {
+            $labelsSet[$row['segment']] = true;
+        }
+        foreach ($newMap as $row) {
+            $labelsSet[$row['segment']] = true;
+        }
+
+        $labels = array_values(array_keys($labelsSet));
+        sort($labels);
+
+        $index = [];
+        foreach ($labels as $i => $label) {
+            $index[$label] = $i;
+        }
+
+        $n = count($labels);
+        $matrix = array_fill(0, $n, array_fill(0, $n, 0));
+        $total = 0;
+
+        foreach ($oldMap as $customerId => $row) {
+            $old = $row['segment'];
+            $new = $newMap[$customerId]['segment'] ?? $old;
+
+            $i = $index[$old];
+            $j = $index[$new];
+            $matrix[$i][$j]++;
+            $total++;
+        }
+
+        return [
+            'labels' => $labels,
+            'matrix' => $matrix,
+            'total' => $total,
+        ];
+    }
+
+    protected function calculateRecencyForInterval(Customer $customer, Carbon $start, Carbon $end): ?int
+    {
+        $lastOrderDate = $customer->orders()
+            ->whereBetween('created_at', [$start, $end])
+            ->max('created_at');
+
+        if (! $lastOrderDate) {
+            return null;
+        }
+
+        return $end->diffInDays($lastOrderDate);
+    }
+
+    protected function calculateFrequencyForInterval(Customer $customer, Carbon $start, Carbon $end): int
+    {
+        return (int) $customer->orders()
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+    }
+
+    protected function calculateMonetaryForInterval(Customer $customer, Carbon $start, Carbon $end): float
+    {
+        return (float) $customer->orders()
+            ->whereBetween('created_at', [$start, $end])
+            ->sum('total_amount');
+    }
+
+    public function classifySegmentsMapForInterval(Carbon $start, Carbon $end, bool $save = false): array
+    {
+        if (! $this->settings->rfm_enable) {
+            return [];
+        }
+
+        $bins = max(2, min(9, $this->settings->rfm_bins));
+        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
+
+        $customers = Customer::query()->with('orders')->get();
+
+        $recencies = [];
+        $frequencies = [];
+        $monetaries = [];
+
+        foreach ($customers as $c) {
+            $r = $this->calculateRecencyForInterval($c, $start, $end);
+            $f = $this->calculateFrequencyForInterval($c, $start, $end);
+            $m = $this->calculateMonetaryForInterval($c, $start, $end);
+
+            if ($r !== null) {
+                $recencies[] = $r;
+            }
+            $frequencies[] = $f;
+            $monetaries[] = $m;
+        }
+
+        $rBreaks = $this->quantileBreaks($recencies, $bins);
+        $fBreaks = $this->quantileBreaks($frequencies, $bins);
+        $mBreaks = $this->quantileBreaks($monetaries, $bins);
+
+        $map = [];
+
+        foreach ($customers as $c) {
+            $r = $this->calculateRecencyForInterval($c, $start, $end);
+            $f = $this->calculateFrequencyForInterval($c, $start, $end);
+            $m = $this->calculateMonetaryForInterval($c, $start, $end);
+
+            $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
+            $fScore = $this->scoreValue($f, $fBreaks, $bins);
+            $mScore = $this->scoreValue($m, $mBreaks, $bins);
+
+            $segment = $this->assignSegment($rScore, $fScore, $mScore, $r, $f, $m, $segmentCount);
+
+            if ($save) {
+                $c->segment = $segment;
+                $c->save();
+            }
+
+            $map[$c->id] = [
+                'segment' => $segment,
+                'r' => $r,
+                'f' => $f,
+                'm' => $m,
+                'rScore' => $rScore,
+                'fScore' => $fScore,
+                'mScore' => $mScore,
+            ];
+        }
+
+        return $map;
+    }
+
+    public function buildTransitionsMatrixForIntervals(Carbon $baselineStart, Carbon $baselineEnd, Carbon $comparisonStart, Carbon $comparisonEnd): array
+    {
+        if (! $this->settings->rfm_enable) {
+            return ['labels' => [], 'matrix' => [], 'total' => 0];
+        }
+
+        $oldMap = $this->classifySegmentsMapForInterval($baselineStart, $baselineEnd, save: false);
+        $newMap = $this->classifySegmentsMapForInterval($comparisonStart, $comparisonEnd, save: false);
+
+        $labelsSet = [];
+        foreach ($oldMap as $row) {
+            $labelsSet[$row['segment']] = true;
+        }
+        foreach ($newMap as $row) {
+            $labelsSet[$row['segment']] = true;
+        }
+
+        $labels = array_values(array_keys($labelsSet));
+        sort($labels);
+
+        $index = [];
+        foreach ($labels as $i => $label) {
+            $index[$label] = $i;
+        }
+
+        $n = count($labels);
+        $matrix = array_fill(0, $n, array_fill(0, $n, 0));
+        $total = 0;
+
+        foreach ($oldMap as $customerId => $row) {
+            $old = $row['segment'];
+            $new = $newMap[$customerId]['segment'] ?? $old;
+
+            $i = $index[$old];
+            $j = $index[$new];
+            $matrix[$i][$j]++;
+            $total++;
+        }
+
+        return [
+            'labels' => $labels,
+            'matrix' => $matrix,
+            'total' => $total,
+        ];
+    }
+
+    public function buildTransitionsMatrixForAsOfDates(string|Carbon $asOfA, string|Carbon $asOfB): array
+    {
+        $asOfA = $asOfA instanceof Carbon ? $asOfA->copy()->endOfDay() : Carbon::parse($asOfA)->endOfDay();
+        $asOfB = $asOfB instanceof Carbon ? $asOfB->copy()->endOfDay() : Carbon::parse($asOfB)->endOfDay();
+
+        $days = max(1, (int) $this->settings->rfm_timeframe_days);
+
+        $baselineStart = $asOfA->copy()->subDays($days)->startOfDay();
+        $baselineEnd = $asOfA;
+
+        $comparisonStart = $asOfB->copy()->subDays($days)->startOfDay();
+        $comparisonEnd = $asOfB;
+
+        return $this->buildTransitionsMatrixForIntervals($baselineStart, $baselineEnd, $comparisonStart, $comparisonEnd);
     }
 }
