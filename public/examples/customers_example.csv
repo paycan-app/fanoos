@@ -1,21 +1,41 @@
 id,first_name,last_name,email,phone,country,state,city,region,birthday,gender,channel,created_at
-1,Laura,Palmer,laura.palmer@example.com,555-0101,USA,Washington,Twin Peaks,Northwest,1972-07-22,F,online,2025-01-15 10:00:00
-2,Dale,Cooper,dale.cooper@example.com,555-0102,USA,Washington,Twin Peaks,Northwest,1954-04-19,M,online,2025-01-16 11:30:00
-3,Audrey,Horne,audrey.horne@example.com,555-0103,USA,Washington,Twin Peaks,Northwest,1972-01-01,F,retail,2025-01-17 12:45:00
-4,Harry S.,Truman,harry.s.truman@example.com,555-0104,USA,Washington,Twin Peaks,Northwest,1945-05-08,M,retail,2025-01-18 14:00:00
-5,Leland,Palmer,leland.palmer@example.com,555-0105,USA,Washington,Twin Peaks,Northwest,1944-02-26,M,online,2025-01-19 15:20:00
-6,Donna,Hayward,donna.hayward@example.com,555-0106,USA,Washington,Twin Peaks,Northwest,1972-03-15,F,online,2025-01-20 16:10:00
-7,Benjamin,Horne,benjamin.horne@example.com,555-0107,USA,Washington,Twin Peaks,Northwest,1940-08-27,M,retail,2025-01-21 17:05:00
-8,Shelly,Johnson,shelly.johnson@example.com,555-0108,USA,Washington,Twin Peaks,Northwest,1970-09-30,F,retail,2025-01-22 18:00:00
-9,Bobby,Briggs,bobby.briggs@example.com,555-0109,USA,Newyork,Newyork,Manhatan,1971-07-12,M,online,2025-01-23 19:40:00
-10,James,Hurley,james.hurley@example.com,555-0110,USA,Washington,Twin Peaks,Northwest,1972-10-01,M,online,2025-01-24 20:30:00
-11,Lucy,Moran,lucy.moran@example.com,555-0111,USA,Washington,Twin Peaks,Northwest,1965-11-18,F,retail,2025-02-01 09:00:00
-12,Andy,Brennan,andy.brennan@example.com,555-0112,USA,Washington,Twin Peaks,Northwest,1963-02-14,M,retail,2025-02-02 10:15:00
-13,Catherine,Martell,catherine.martell@example.com,555-0113,USA,Washington,Twin Peaks,Northwest,1948-06-06,F,online,2025-02-03 11:25:00
-14,Pete,Martell,pete.martell@example.com,555-0114,USA,Newyork,Newyork,Manhatan,1946-04-01,M,online,2025-02-04 12:35:00
-15,Josie,Packard,josie.packard@example.com,555-0115,USA,Newyork,Newyork,Manhatan,1962-09-22,F,retail,2025-02-05 13:45:00
-16,Norma,Jennings,norma.jennings@example.com,555-0116,USA,Texas,Dallas,Downtown,1952-05-27,F,retail,2025-02-06 14:55:00
-17,Ed,Hurley,ed.hurley@example.com,555-0117,USA,Texas,Dallas,Downtown,1950-07-04,M,online,2025-02-07 16:05:00
-18,Nadine,Hurley,nadine.hurley@example.com,555-0118,USA,Texas,Dallas,Downtown,1951-12-31,F,online,2025-02-08 17:15:00
-19,Leo,Johnson,leo.johnson@example.com,555-0119,USA,Washington,Twin Peaks,Northwest,1955-08-15,M,retail,2025-02-09 18:25:00
-20,Ronette,Pulaski,ronette.pulaski@example.com,555-0120,USA,Washington,Twin Peaks,Northwest,1971-02-09,F,online,2025-02-10 19:35:00
+1,Laura,Palmer,laura.palmer@example.com,555-0101,USA,Washington,Twin Peaks,Northwest,1972-07-22,F,online,2025-01-20 19:15:20
+2,Dale,Cooper,dale.cooper@example.com,555-0102,USA,Washington,Twin Peaks,Northwest,1954-04-19,M,online,2025-01-16 14:26:06
+3,Audrey,Horne,audrey.horne@example.com,555-0103,USA,Washington,Twin Peaks,Northwest,1972-01-01,F,retail,2025-01-05 08:31:55
+4,Harry S.,Truman,harry.s.truman@example.com,555-0104,USA,Washington,Twin Peaks,Northwest,1945-05-08,M,retail,2025-01-19 09:33:55
+5,Leland,Palmer,leland.palmer@example.com,555-0105,USA,Washington,Twin Peaks,Northwest,1944-02-26,M,online,2025-01-11 02:02:18
+6,Donna,Hayward,donna.hayward@example.com,555-0106,USA,Washington,Twin Peaks,Northwest,1972-03-15,F,online,2025-01-05 18:19:11
+7,Benjamin,Horne,benjamin.horne@example.com,555-0107,USA,Washington,Twin Peaks,Northwest,1940-08-27,M,retail,2025-01-06 05:00:23
+8,Shelly,Johnson,shelly.johnson@example.com,555-0108,USA,Washington,Twin Peaks,Northwest,1970-09-30,F,retail,2025-01-12 00:07:07
+9,Bobby,Briggs,bobby.briggs@example.com,555-0109,USA,New York,New York City,Northeast,1971-07-12,M,online,2025-01-20 18:59:04
+10,James,Hurley,james.hurley@example.com,555-0110,USA,Washington,Twin Peaks,Northwest,1972-10-01,M,online,2025-01-10 17:09:59
+11,Lucy,Moran,lucy.moran@example.com,555-0111,USA,Washington,Twin Peaks,Northwest,1965-11-18,F,retail,2025-01-09 17:49:15
+12,Andy,Brennan,andy.brennan@example.com,555-0112,USA,Washington,Twin Peaks,Northwest,1963-02-14,M,retail,2025-01-01 16:35:46
+13,Catherine,Martell,catherine.martell@example.com,555-0113,USA,Washington,Twin Peaks,Northwest,1948-06-06,F,online,2025-01-03 16:03:00
+14,Pete,Martell,pete.martell@example.com,555-0114,USA,New York,New York City,Northeast,1946-04-01,M,online,2025-01-02 12:13:30
+15,Josie,Packard,josie.packard@example.com,555-0115,USA,New York,New York City,Northeast,1962-09-22,F,retail,2025-01-04 19:35:05
+16,Norma,Jennings,norma.jennings@example.com,555-0116,USA,Texas,Houston,South,1952-05-27,F,retail,2025-01-07 10:48:40
+17,Ed,Hurley,ed.hurley@example.com,555-0117,USA,Texas,Houston,South,1950-07-04,M,online,2025-01-03 16:01:23
+18,Nadine,Hurley,nadine.hurley@example.com,555-0118,USA,Texas,Houston,South,1951-12-31,F,online,2025-01-18 10:24:26
+19,Leo,Johnson,leo.johnson@example.com,555-0119,USA,Washington,Twin Peaks,Northwest,1955-08-15,M,retail,2025-01-01 10:43:03
+20,Ronette,Pulaski,ronette.pulaski@example.com,555-0120,USA,Washington,Twin Peaks,Northwest,1971-02-09,F,online,2025-01-08 19:33:43
+21,Gordon,Cole,gordon.cole@example.com,555-0121,USA,California,Los Angeles,West,1945-03-20,M,online,2025-01-03 09:12:08
+22,Albert,Rosenfield,albert.rosenfield@example.com,555-0122,USA,California,Los Angeles,West,1950-06-10,M,online,2025-01-01 19:15:43
+23,Tammy,Preston,tammy.preston@example.com,555-0123,USA,California,Los Angeles,West,1980-01-05,F,retail,2025-01-07 16:53:31
+24,Frank,Truman,frank.truman@example.com,555-0124,USA,Texas,Houston,South,1948-09-12,M,retail,2025-01-15 13:58:34
+25,Hawk,Hill,hawk.hill@example.com,555-0125,USA,Texas,Houston,South,1960-04-25,M,online,2025-01-07 18:41:43
+26,Annie,Blackburn,annie.blackburn@example.com,555-0126,USA,Florida,Miami,Southeast,1970-11-01,F,online,2025-01-09 10:20:11
+27,Mike,Nelson,mike.nelson@example.com,555-0127,USA,Florida,Miami,Southeast,1972-08-18,M,retail,2025-01-13 06:17:59
+28,Sarah,Palmer,sarah.palmer@example.com,555-0128,USA,Florida,Miami,Southeast,1942-02-02,F,retail,2025-01-02 11:27:07
+29,Phillip,Jeffries,phillip.jeffries@example.com,555-0129,USA,Illinois,Chicago,Midwest,1935-07-07,M,online,2025-01-14 01:52:03
+30,Diane,Evans,diane.evans@example.com,555-0130,USA,Illinois,Chicago,Midwest,1958-10-10,F,online,2025-01-10 16:34:06
+31,Denise,Bryson,denise.bryson@example.com,555-0131,USA,Illinois,Chicago,Midwest,1960-05-05,F,retail,2025-01-06 09:21:49
+32,Jerry,Horne,jerry.horne@example.com,555-0132,USA,Colorado,Denver,Mountain,1941-01-15,M,retail,2025-01-17 11:45:12
+33,Dr.,Jacoby,dr.jacoby@example.com,555-0133,USA,Colorado,Denver,Mountain,1938-03-03,M,online,2025-01-08 07:05:50
+34,Log,Lady,log.lady@example.com,555-0134,USA,Colorado,Denver,Mountain,1925-12-12,F,online,2025-01-11 15:50:33
+35,Deputy,Chad,deputy.chad@example.com,555-0135,USA,Oregon,Portland,Northwest,1982-09-09,M,retail,2025-01-04 14:03:19
+36,Steven,Burnett,steven.burnett@example.com,555-0136,USA,Oregon,Portland,Northwest,1975-04-01,M,retail,2025-01-19 12:38:01
+37,Becky,Burnett,becky.burnett@example.com,555-0137,USA,Oregon,Portland,Northwest,1985-08-20,F,online,2025-01-16 00:36:10
+38,Richard,Horne,richard.horne@example.com,555-0138,USA,Arizona,Phoenix,Southwest,1990-02-14,M,online,2025-01-05 03:22:55
+39,Dougie,Jones,dougie.jones@example.com,555-0139,USA,Arizona,Phoenix,Southwest,1965-07-27,M,retail,2025-01-12 11:09:47
+40,Janey-E,Jones,janey-e.jones@example.com,555-0140,USA,Arizona,Phoenix,Southwest,1968-09-01,F,online,2025-01-01 22:58:22

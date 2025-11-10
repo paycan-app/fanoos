@@ -12,7 +12,7 @@ class RfmService
         protected GeneralSettings $settings
     ) {}
 
-    public function calculateSegments(?int $timeframeDays = null): array
+    public function calculateSegments(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
     {
         if (! $this->settings->rfm_enable) {
             return ['message' => 'RFM is disabled in settings.'];
@@ -21,6 +21,7 @@ class RfmService
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $segments = max(3, min(11, $this->settings->rfm_segments));
         $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+        $analysisDate = $asOfDate ?? now();
 
         $customers = Customer::query()->with('orders')->get();
 
@@ -29,9 +30,9 @@ class RfmService
         $monetaries = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe);
-            $f = $this->calculateFrequency($c, $timeframe);
-            $m = $this->calculateMonetary($c, $timeframe);
+            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
+            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
+            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
 
             if ($r !== null) {
                 $recencies[] = $r;
@@ -47,9 +48,9 @@ class RfmService
         $stats = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe);
-            $f = $this->calculateFrequency($c, $timeframe);
-            $m = $this->calculateMonetary($c, $timeframe);
+            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
+            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
+            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
 
             $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
             $fScore = $this->scoreValue($f, $fBreaks, $bins);
@@ -90,35 +91,38 @@ class RfmService
         return collect($stats)->sortByDesc('customers')->values()->toArray();
     }
 
-    protected function calculateRecency(Customer $customer, int $timeframeDays): ?int
+    protected function calculateRecency(Customer $customer, int $timeframeDays, Carbon $asOfDate): ?int
     {
-        $cutoffDate = now()->subDays($timeframeDays);
+        $cutoffDate = $asOfDate->copy()->subDays($timeframeDays);
         $lastOrderDate = $customer->orders()
             ->where('created_at', '>=', $cutoffDate)
+            ->where('created_at', '<=', $asOfDate)
             ->max('created_at');
 
         if (! $lastOrderDate) {
             return null;
         }
 
-        return now()->diffInDays($lastOrderDate);
+        return (int) Carbon::parse($lastOrderDate)->diffInDays($asOfDate);
     }
 
-    protected function calculateFrequency(Customer $customer, int $timeframeDays): int
+    protected function calculateFrequency(Customer $customer, int $timeframeDays, Carbon $asOfDate): int
     {
-        $cutoffDate = now()->subDays($timeframeDays);
+        $cutoffDate = $asOfDate->copy()->subDays($timeframeDays);
 
         return (int) $customer->orders()
             ->where('created_at', '>=', $cutoffDate)
+            ->where('created_at', '<=', $asOfDate)
             ->count();
     }
 
-    protected function calculateMonetary(Customer $customer, int $timeframeDays): float
+    protected function calculateMonetary(Customer $customer, int $timeframeDays, Carbon $asOfDate): float
     {
-        $cutoffDate = now()->subDays($timeframeDays);
+        $cutoffDate = $asOfDate->copy()->subDays($timeframeDays);
 
         return (float) $customer->orders()
             ->where('created_at', '>=', $cutoffDate)
+            ->where('created_at', '<=', $asOfDate)
             ->sum('total_amount');
     }
 
@@ -219,46 +223,57 @@ class RfmService
 
     protected function assignElevenSegments(int $r, int $f, int $m): string
     {
+        // Champions: Best customers - High R, F, M
         if ($r >= 4 && $f >= 4 && $m >= 4) {
             return 'Champions';
         }
 
+        // Loyal Customers: Recent and frequent buyers - High F, M
         if ($r >= 3 && $f >= 4 && $m >= 4) {
             return 'Loyal Customers';
         }
 
+        // Potential Loyalist: Recent customers with good potential
         if ($r >= 4 && $f >= 3 && $m >= 3) {
             return 'Potential Loyalist';
         }
 
+        // New Customers: Recently acquired, low frequency
         if ($r >= 4 && $f <= 2 && $m <= 2) {
             return 'New Customers';
         }
 
+        // Promising: Recent customers showing promise
         if ($r >= 3 && $f >= 3 && $m >= 3) {
             return 'Promising';
         }
 
+        // Customers Needing Attention: Recent but low engagement
         if ($r >= 3 && $f <= 2 && $m <= 2) {
-            return 'Need Attention';
+            return 'Customers Needing Attention';
         }
 
+        // About To Sleep: Risk of losing, were good customers
         if ($r <= 2 && $f >= 3 && $m >= 3) {
             return 'About To Sleep';
         }
 
+        // At Risk: Not recent, declining engagement
         if ($r <= 2 && $f >= 2 && $m >= 2) {
             return 'At Risk';
         }
 
-        if ($r <= 2 && $f <= 2 && $m >= 3) {
+        // Cannot Lose Them: High value but haven't purchased recently
+        if ($r <= 2 && $f <= 2 && $m >= 4) {
             return 'Cannot Lose Them';
         }
 
-        if ($r <= 1) {
+        // Hibernating: Very inactive
+        if ($r <= 1 && $f <= 2) {
             return 'Hibernating';
         }
 
+        // Lost: No recent activity
         return 'Lost';
     }
 
@@ -284,7 +299,7 @@ class RfmService
             ->toArray();
     }
 
-    public function classifySegmentsMap(?int $timeframeDays = null, bool $save = false): array
+    public function classifySegmentsMap(?int $timeframeDays = null, bool $save = false, ?Carbon $asOfDate = null): array
     {
         if (! $this->settings->rfm_enable) {
             return [];
@@ -293,6 +308,7 @@ class RfmService
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $segmentCount = max(3, min(11, $this->settings->rfm_segments));
         $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+        $analysisDate = $asOfDate ?? now();
 
         $customers = Customer::query()->with('orders')->get();
 
@@ -301,9 +317,9 @@ class RfmService
         $monetaries = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe);
-            $f = $this->calculateFrequency($c, $timeframe);
-            $m = $this->calculateMonetary($c, $timeframe);
+            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
+            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
+            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
 
             if ($r !== null) {
                 $recencies[] = $r;
@@ -319,9 +335,9 @@ class RfmService
         $map = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe);
-            $f = $this->calculateFrequency($c, $timeframe);
-            $m = $this->calculateMonetary($c, $timeframe);
+            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
+            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
+            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
 
             $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
             $fScore = $this->scoreValue($f, $fBreaks, $bins);
@@ -348,7 +364,7 @@ class RfmService
         return $map;
     }
 
-    public function buildMarimekkoByMonetary(?int $timeframeDays = null): array
+    public function buildMarimekkoByMonetary(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
     {
         if (! $this->settings->rfm_enable) {
             return ['segments' => [], 'binLabels' => [], 'total' => 0];
@@ -357,7 +373,7 @@ class RfmService
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
 
-        $map = $this->classifySegmentsMap($timeframe, save: false);
+        $map = $this->classifySegmentsMap($timeframe, save: false, asOfDate: $asOfDate);
         if (empty($map)) {
             return ['segments' => [], 'binLabels' => [], 'total' => 0];
         }
@@ -366,7 +382,7 @@ class RfmService
         $mBreaks = $this->quantileBreaks($mValues, $bins);
         $binLabels = [];
         for ($i = 1; $i <= $bins; $i++) {
-            $binLabels[] = 'M' . $i;
+            $binLabels[] = 'M'.$i;
         }
 
         $segmentCounts = [];
@@ -375,7 +391,7 @@ class RfmService
         foreach ($map as $row) {
             $segment = $row['segment'];
             $scoreM = $this->scoreValue($row['m'], $mBreaks, $bins);
-            $label = 'M' . $scoreM;
+            $label = 'M'.$scoreM;
 
             $segmentCounts[$segment] = ($segmentCounts[$segment] ?? 0) + 1;
             $segmentsBins[$segment] = $segmentsBins[$segment] ?? [];
