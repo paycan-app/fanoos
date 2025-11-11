@@ -14,9 +14,7 @@ class RfmService
 
     public function calculateSegments(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
     {
-        if (! $this->settings->rfm_enable) {
-            return ['message' => 'RFM is disabled in settings.'];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return ['message' => 'RFM is disabled in settings.']; }
 
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $segments = max(3, min(11, $this->settings->rfm_segments));
@@ -301,9 +299,7 @@ class RfmService
 
     public function classifySegmentsMap(?int $timeframeDays = null, bool $save = false, ?Carbon $asOfDate = null): array
     {
-        if (! $this->settings->rfm_enable) {
-            return [];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return []; }
 
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $segmentCount = max(3, min(11, $this->settings->rfm_segments));
@@ -366,9 +362,7 @@ class RfmService
 
     public function buildMarimekkoByMonetary(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
     {
-        if (! $this->settings->rfm_enable) {
-            return ['segments' => [], 'binLabels' => [], 'total' => 0];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return ['segments' => [], 'binLabels' => [], 'total' => 0]; }
 
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
@@ -426,9 +420,7 @@ class RfmService
 
     public function buildTransitionsMatrix(int $baselineDays, int $comparisonDays): array
     {
-        if (! $this->settings->rfm_enable) {
-            return ['labels' => [], 'matrix' => [], 'total' => 0];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return ['labels' => [], 'matrix' => [], 'total' => 0]; }
 
         $oldMap = $this->classifySegmentsMap($baselineDays, save: false);
         $newMap = $this->classifySegmentsMap($comparisonDays, save: false);
@@ -499,9 +491,7 @@ class RfmService
 
     public function classifySegmentsMapForInterval(Carbon $start, Carbon $end, bool $save = false): array
     {
-        if (! $this->settings->rfm_enable) {
-            return [];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return []; }
 
         $bins = max(2, min(9, $this->settings->rfm_bins));
         $segmentCount = max(3, min(11, $this->settings->rfm_segments));
@@ -562,9 +552,7 @@ class RfmService
 
     public function buildTransitionsMatrixForIntervals(Carbon $baselineStart, Carbon $baselineEnd, Carbon $comparisonStart, Carbon $comparisonEnd): array
     {
-        if (! $this->settings->rfm_enable) {
-            return ['labels' => [], 'matrix' => [], 'total' => 0];
-        }
+        // Removed: if (! $this->settings->rfm_enable) { return ['labels' => [], 'matrix' => [], 'total' => 0]; }
 
         $oldMap = $this->classifySegmentsMapForInterval($baselineStart, $baselineEnd, save: false);
         $newMap = $this->classifySegmentsMapForInterval($comparisonStart, $comparisonEnd, save: false);

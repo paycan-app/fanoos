@@ -1,6 +1,0 @@
-id,customer_id,created_at,total_amount,status,meta
-ORD-001,CUST-001,2024-01-15 10:30:00,159.99,completed,"{""shipping_method"":""express"",""payment_method"":""credit_card""}"
-ORD-002,CUST-002,2024-01-16 14:20:00,89.50,completed,"{""shipping_method"":""standard"",""payment_method"":""paypal""}"
-ORD-003,CUST-001,2024-02-20 09:15:00,249.99,completed,"{""shipping_method"":""express"",""payment_method"":""credit_card""}"
-ORD-004,CUST-003,2024-03-10 16:45:00,45.00,pending,"{""shipping_method"":""standard"",""payment_method"":""credit_card""}"
-ORD-005,CUST-002,2024-04-05 11:30:00,125.75,completed,"{""shipping_method"":""express"",""payment_method"":""paypal""}"

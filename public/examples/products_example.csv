@@ -1,41 +1,31 @@
-id,name,description,price,sku,category,created_at
-1,Cherry Pie,"A slice of pie that's a slice of heaven.",2.50,TP-PIE-CH,Food,2025-02-01 04:09:59
-2,Damn Good Coffee,"Hot, black, and as good as it gets.",1.50,TP-COF-BLK,Beverage,2025-01-20 03:06:58
-3,Donut,"A dozen donuts, perfect for a stakeout.",1.00,TP-DON-GLZ,Food,2025-02-04 14:48:40
-4,Log,"It saw something that night.",15.00,TP-LOG-LRG,Mysteries,2025-01-19 04:36:20
-5,Percolator,"For brewing that damn good coffee.",75.00,TP-PERC-01,Appliances,2025-01-07 09:55:09
-6,Red Room Curtain,"Iconic red curtain from the Black Lodge.",120.00,TP-CUR-RED,Decor,2025-01-21 02:40:48
-7,Black Lodge Floor Tile,"A single tile with the iconic chevron pattern.",25.00,TP-TILE-BLK,Decor,2025-01-14 02:26:07
-8,Sawmill Blade,"A relic from the Packard Sawmill.",250.00,TP-SAW-BLD,Industrial,2025-01-09 09:02:11
-9,Fish in a Percolator,"A quirky, unforgettable decorative item.",5.00,TP-FISH-PERC,Novelty,2025-01-16 02:00:46
-10,Silent Drape Runners,"The quietest drape runners you'll never hear.",45.00,TP-DRP-RUN,Hardware,2025-01-01 00:00:00
-11,Huckleberry Pie,"A delicious alternative to cherry.",3.00,TP-PIE-HUCK,Food,2025-01-03 07:05:50
-12,Bookhouse Boys Patch,"An embroidered patch for members of the secret society.",12.50,TP-PATCH-BHB,Apparel,2025-01-05 08:31:55
-13,One-Eyed Jack's Poker Chip,"A souvenir from the infamous casino.",7.50,TP-CHIP-OEJ,Memorabilia,2025-01-08 19:33:43
-14,Great Northern Hotel Key,"A vintage-style key from the iconic hotel.",22.00,TP-KEY-GNH,Memorabilia,2025-01-10 17:09:59
-15,Laura's Diary,"A replica of Laura Palmer's secret diary.",18.00,TP-DIARY-LP,Books,2025-01-06 05:00:23
-16,Owl Cave Map,"A map detailing the mysterious Owl Cave.",35.00,TP-MAP-OC,Mysteries,2025-01-02 11:27:07
-17,Log Lady's Log,"A smaller, more portable log for your own insights.",50.00,TP-LOG-SML,Mysteries,2025-01-12 11:09:47
-18,Ghostwood National Forest Sign,"A replica of the forest entrance sign.",80.00,TP-SIGN-GNF,Decor,2025-01-18 10:24:26
-19,RR Diner Mug,"The classic mug from the Double R Diner.",14.00,TP-MUG-RR,Kitchenware,2025-01-04 14:03:19
-20,Welcome to Twin Peaks Sign,"A full-size replica of the iconic town sign.",150.00,TP-SIGN-WTP,Decor,2025-01-15 13:58:34
-21,Sheriff Dept Badge,"Official Twin Peaks Sheriff Department replica badge.",25.00,TP-BADGE-SHF,Memorabilia,2025-01-03 09:12:08
-22,Agent Cooper's Tape Recorder,"A replica of Dale Cooper's trusty microcassette recorder.",60.00,TP-REC-COOP,Novelty,2025-01-01 19:15:43
-23,Black Coffee Beans,"Premium blend for that perfect cup.",12.00,TP-BEANS-BLK,Beverage,2025-01-07 16:53:31
-24,Maple Syrup Bottle,"Pure maple syrup from the region.",8.00,TP-SYRUP-MAP,Food,2025-01-15 13:58:34
-25,Giant's Message Note,"A cryptic message from the Giant.",10.00,TP-NOTE-GNT,Mysteries,2025-01-07 18:41:43
-26,White Horse Figurine,"Symbol of innocence and mystery.",30.00,TP-FIG-WHT,Decor,2025-01-09 10:20:11
-27,Double R Diner Menu,"A replica menu from the famous diner.",5.00,TP-MENU-RR,Memorabilia,2025-01-13 06:17:59
-28,Roadhouse Live Music CD,"Soundtrack to the Roadhouse.",18.00,TP-CD-RHM,Books,2025-01-02 11:27:07
-29,One-Eyed Jack's Playing Cards,"Deck of cards from the casino.",7.00,TP-CARD-OEJ,Novelty,2025-01-14 01:52:03
-30,Blue Rose Pin,"A mysterious pin.",10.00,TP-PIN-BLU,Apparel,2025-01-10 16:34:06
-31,The Book of the Black Lodge,"A forbidden text.",40.00,TP-BOOK-BLK,Books,2025-01-06 09:21:49
-32,Fire Walk With Me T-Shirt,"Classic Twin Peaks phrase.",25.00,TP-TSH-FWM,Apparel,2025-01-17 11:45:12
-33,Cherry Stem Knot Kit,"Learn the classic trick.",3.00,TP-KIT-CST,Novelty,2025-01-08 07:05:50
-34,Log Lady Glasses,"Replica glasses for deep contemplation.",20.00,TP-GLS-LOG,Apparel,2025-01-11 15:50:33
-35,Great Northern Matchbook,"Souvenir from the hotel.",2.00,TP-MTCH-GNH,Memorabilia,2025-01-04 14:03:19
-36,Audrey's Dance Shoes,"Replica of Audrey Horne's iconic shoes.",90.00,TP-SHOE-AUD,Apparel,2025-01-19 12:38:01
-37,Bob's Reflection Mirror,"A chilling decorative mirror.",70.00,TP-MIR-BOB,Decor,2025-01-16 00:36:10
-38,The Red Room Chess Set,"A unique chess set with Black Lodge themes.",150.00,TP-CHESS-RR,Novelty,2025-01-05 03:22:55
-39,Twin Peaks Map,"Detailed map of the town and surrounding areas.",12.00,TP-MAP-TP,Books,2025-01-12 11:09:47
-40,Agent Cooper's Donut Box,"Empty box, but the memories are full.",4.00,TP-BOX-DON,Novelty,2025-01-01 22:58:22
+id,title,category,subcategory,brand,sku,price,meta
+PROD001,"Wireless Headphones",Electronics,Audio,Sonic,WH-100,99.99,"{""published_at"":""2025-01-10 09:00:00""}"
+PROD002,"Smart Watch",Electronics,Wearables,Chrono,SW-200,149.99,"{""published_at"":""2025-01-10 09:00:00""}"
+PROD003,"Bluetooth Speaker",Electronics,Audio,Boom,BS-300,79.99,"{""published_at"":""2025-01-10 09:00:00""}"
+PROD004,"USB-C Hub",Electronics,Accessories,Hubify,HB-400,39.99,"{""published_at"":""2025-01-10 09:00:00""}"
+PROD005,"Laptop Sleeve",Electronics,Accessories,Protec,LS-500,29.99,"{""published_at"":""2025-01-10 09:00:00""}"
+PROD006,"Air Fryer",Home,Kitchen,Cooko,AF-110,89.99,"{""published_at"":""2025-01-25 09:00:00""}"
+PROD007,"Vacuum Cleaner",Home,Cleaning,DustAway,VC-120,129.99,"{""published_at"":""2025-01-25 09:00:00""}"
+PROD008,"LED Desk Lamp",Home,Decor,Bright,DL-130,24.99,"{""published_at"":""2025-01-25 09:00:00""}"
+PROD009,"Memory Foam Pillow",Home,Bedding,Sleeper,FP-140,34.99,"{""published_at"":""2025-01-25 09:00:00""}"
+PROD010,"Electric Kettle",Home,Kitchen,BoilPro,EK-150,49.99,"{""published_at"":""2025-01-25 09:00:00""}"
+PROD011,"Face Serum",Beauty,Skincare,Glow,FS-210,19.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD012,"Hair Dryer",Beauty,Hair,StyleX,HD-220,59.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD013,Perfume,Beauty,Fragrance,Aroma,PF-230,79.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD014,Lipstick,Beauty,Makeup,Colorpop,LP-240,14.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD015,Moisturizer,Beauty,Skincare,Hydra,MZ-250,24.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD016,"Yoga Mat",Sports,Yoga,Flex,YM-310,29.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD017,"Dumbbell Set",Sports,Gym,Power,DB-320,59.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD018,"Cycling Helmet",Sports,Cycling,RideSafe,CH-330,49.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD019,"Tennis Racket",Sports,Outdoor,Ace,TR-340,89.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD020,"Jump Rope",Sports,Gym,Swift,JR-350,12.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD021,"Novel: The Wanderer",Books,Fiction,BookHouse,BK-410,14.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD022,"Study Guide",Books,Non-fiction,LearnWell,BK-420,19.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD023,"Sci-Fi Anthology",Books,Sci-Fi,GalaxyPub,BK-430,24.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD024,"Children Stories",Books,Children,KidsRead,BK-440,9.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD025,"Building Blocks",Toys,Building,Blocky,TY-510,29.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD026,"Educational Tablet",Toys,Educational,EduPlay,TY-520,49.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD027,"Action Figure",Toys,Figures,HeroCo,TY-530,19.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD028,"Board Game",Toys,"Board Games",GameNight,TY-540,34.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD029,"Puzzle Set",Toys,Educational,MindBend,TY-550,14.99,"{""published_at"":""2025-02-15 09:00:00""}"
+PROD030,"RC Car",Toys,Outdoor,Speedster,TY-560,59.99,"{""published_at"":""2025-02-15 09:00:00""}"

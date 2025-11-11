@@ -74,7 +74,7 @@ class Segments extends Page implements \Filament\Tables\Contracts\HasTable
                 ->icon(Heroicon::Cog)
                 ->collapsible()
                 ->schema([
-                    Grid::make(4)->schema([
+                    Grid::make(3)->schema([
                         \Filament\Schemas\Components\Text::make('Segmentation Level: '.$settings->rfm_segments.' segments')
                             ->badge(true)
                             ->color('primary'),
@@ -84,9 +84,10 @@ class Segments extends Page implements \Filament\Tables\Contracts\HasTable
                         \Filament\Schemas\Components\Text::make('Timeframe: '.$settings->rfm_timeframe_days.' days')
                             ->badge(true)
                             ->color('success'),
-                        \Filament\Schemas\Components\Text::make('Status: '.($settings->rfm_enable ? 'Enabled' : 'Disabled'))
-                            ->badge(true)
-                            ->color($settings->rfm_enable ? 'success' : 'danger'),
+                        // Removed status display based on rfm_enable
+                        // \Filament\Schemas\Components\Text::make('Status: '.($settings->rfm_enable ? 'Enabled' : 'Disabled'))
+                        //     ->badge(true)
+                        //     ->color($settings->rfm_enable ? 'success' : 'danger'),
                     ]),
                 ]),
         ]);

@@ -10,7 +10,7 @@
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Baseline Period (days)</label>
                     <select class="fi-input mt-1 w-full rounded-md border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900"
-                            wire:model="baselineDays">
+                            id="baselineDays">
                         <option value="90">90</option>
                         <option value="180">180</option>
                         <option value="365">365</option>
@@ -21,7 +21,7 @@
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Comparison Period (days)</label>
                     <select class="fi-input mt-1 w-full rounded-md border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900"
-                            wire:model="comparisonDays">
+                            id="comparisonDays">
                         <option value="90">90</option>
                         <option value="180">180</option>
                         <option value="365">365</option>
@@ -31,8 +31,7 @@
                 </div>
                 <div class="flex items-end">
                     <button type="button"
-                            class="fi-btn px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700"
-                            wire:click="analyze">
+                            class="fi-btn px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700">
                         Analyze Transitions
                     </button>
                 </div>
@@ -46,6 +45,11 @@
             <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
                 <h3 class="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">Segment Transitions Heatmap</h3>
                 <div id="transitionsHeatmap" style="height: 540px;"></div>
+            </div>
+            <!-- Churn Distribution Chart -->
+            <div class="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
+                <h3 class="text-lg font-semibold mb-4 text-neutral-900 dark:text-neutral-100">Churn Distribution</h3>
+                <div id="churnDistributionChart" style="height: 540px;"></div>
             </div>
         
             <!-- Transitions Table -->
@@ -112,6 +116,65 @@
                         displayModeBar: true,
                         displaylogo: false,
                     });
+                })();
+
+                // Churn JSON plot (via fetch + asset URL)
+                (function () {
+                    const isDarkMode = document.documentElement.classList.contains('dark');
+                    const url = '{{ asset('examples/churn_distribution.json') }}';
+
+                    function decodeB64ToFloat64(b64) {
+                        const bin = atob(b64);
+                        const bytes = new Uint8Array(bin.length);
+                        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                        const view = new DataView(bytes.buffer);
+                        const out = new Array(bytes.length / 8);
+                        for (let i = 0; i < out.length; i++) out[i] = view.getFloat64(i * 8, true);
+                        return out;
+                    }
+                    function normalizeAxis(axis) {
+                        if (axis && typeof axis === 'object' && axis.bdata && axis.dtype === 'f8') {
+                            return decodeB64ToFloat64(axis.bdata);
+                        }
+                        return axis;
+                    }
+                    function normalizeFig(fig) {
+                        if (!fig || !Array.isArray(fig.data)) return fig;
+                        fig.data = fig.data.map((trace) => {
+                            const t = { ...trace };
+                            t.x = normalizeAxis(t.x);
+                            t.y = normalizeAxis(t.y);
+                            return t;
+                        });
+                        return fig;
+                    }
+
+                    fetch(url, { cache: 'no-store' })
+                        .then((resp) => {
+                            if (!resp.ok) throw new Error('HTTP ' + resp.status + ' for ' + url);
+                            return resp.json();
+                        })
+                        .then((fig) => {
+                            const normalized = normalizeFig(fig);
+
+                            const layout = { ...(normalized.layout || {}) };
+                            if (isDarkMode) {
+                                layout.paper_bgcolor = '#262626';
+                                layout.plot_bgcolor = '#262626';
+                                layout.font = { ...(layout.font || {}), color: '#e5e5e5' };
+                                layout.xaxis = { ...(layout.xaxis || {}), gridcolor: '#404040', linecolor: '#e5e5e5' };
+                                layout.yaxis = { ...(layout.yaxis || {}), gridcolor: '#404040', linecolor: '#e5e5e5' };
+                            }
+
+                            Plotly.newPlot('churnDistributionChart', normalized.data, layout, {
+                                responsive: true,
+                                displayModeBar: true,
+                                displaylogo: false,
+                            });
+                        })
+                        .catch((err) => {
+                            console.error('Failed to load churn_distribution.json', err);
+                        });
                 })();
             </script>
         </div>

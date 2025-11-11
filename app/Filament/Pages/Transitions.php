@@ -31,11 +31,12 @@ class Transitions extends Page
 
     public function mount(): void
     {
-        $settings = app(GeneralSettings::class);
-        if (! $settings->rfm_enable) {
-            $this->message = 'RFM is disabled in settings.';
-            return;
-        }
+        // Removed: rfm_enable gate check and message
+        // $settings = app(GeneralSettings::class);
+        // if (! $settings->rfm_enable) {
+        //     $this->message = 'RFM is disabled in settings.';
+        //     return;
+        // }
 
         $this->asOfDateA = now()->subYear()->toDateString();
         $this->asOfDateB = now()->toDateString();

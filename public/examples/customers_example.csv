@@ -1,41 +1,51 @@
-id,first_name,last_name,email,phone,country,state,city,region,birthday,gender,channel,created_at
-1,Laura,Palmer,laura.palmer@example.com,555-0101,USA,Washington,Twin Peaks,Northwest,1972-07-22,F,online,2025-01-20 19:15:20
-2,Dale,Cooper,dale.cooper@example.com,555-0102,USA,Washington,Twin Peaks,Northwest,1954-04-19,M,online,2025-01-16 14:26:06
-3,Audrey,Horne,audrey.horne@example.com,555-0103,USA,Washington,Twin Peaks,Northwest,1972-01-01,F,retail,2025-01-05 08:31:55
-4,Harry S.,Truman,harry.s.truman@example.com,555-0104,USA,Washington,Twin Peaks,Northwest,1945-05-08,M,retail,2025-01-19 09:33:55
-5,Leland,Palmer,leland.palmer@example.com,555-0105,USA,Washington,Twin Peaks,Northwest,1944-02-26,M,online,2025-01-11 02:02:18
-6,Donna,Hayward,donna.hayward@example.com,555-0106,USA,Washington,Twin Peaks,Northwest,1972-03-15,F,online,2025-01-05 18:19:11
-7,Benjamin,Horne,benjamin.horne@example.com,555-0107,USA,Washington,Twin Peaks,Northwest,1940-08-27,M,retail,2025-01-06 05:00:23
-8,Shelly,Johnson,shelly.johnson@example.com,555-0108,USA,Washington,Twin Peaks,Northwest,1970-09-30,F,retail,2025-01-12 00:07:07
-9,Bobby,Briggs,bobby.briggs@example.com,555-0109,USA,New York,New York City,Northeast,1971-07-12,M,online,2025-01-20 18:59:04
-10,James,Hurley,james.hurley@example.com,555-0110,USA,Washington,Twin Peaks,Northwest,1972-10-01,M,online,2025-01-10 17:09:59
-11,Lucy,Moran,lucy.moran@example.com,555-0111,USA,Washington,Twin Peaks,Northwest,1965-11-18,F,retail,2025-01-09 17:49:15
-12,Andy,Brennan,andy.brennan@example.com,555-0112,USA,Washington,Twin Peaks,Northwest,1963-02-14,M,retail,2025-01-01 16:35:46
-13,Catherine,Martell,catherine.martell@example.com,555-0113,USA,Washington,Twin Peaks,Northwest,1948-06-06,F,online,2025-01-03 16:03:00
-14,Pete,Martell,pete.martell@example.com,555-0114,USA,New York,New York City,Northeast,1946-04-01,M,online,2025-01-02 12:13:30
-15,Josie,Packard,josie.packard@example.com,555-0115,USA,New York,New York City,Northeast,1962-09-22,F,retail,2025-01-04 19:35:05
-16,Norma,Jennings,norma.jennings@example.com,555-0116,USA,Texas,Houston,South,1952-05-27,F,retail,2025-01-07 10:48:40
-17,Ed,Hurley,ed.hurley@example.com,555-0117,USA,Texas,Houston,South,1950-07-04,M,online,2025-01-03 16:01:23
-18,Nadine,Hurley,nadine.hurley@example.com,555-0118,USA,Texas,Houston,South,1951-12-31,F,online,2025-01-18 10:24:26
-19,Leo,Johnson,leo.johnson@example.com,555-0119,USA,Washington,Twin Peaks,Northwest,1955-08-15,M,retail,2025-01-01 10:43:03
-20,Ronette,Pulaski,ronette.pulaski@example.com,555-0120,USA,Washington,Twin Peaks,Northwest,1971-02-09,F,online,2025-01-08 19:33:43
-21,Gordon,Cole,gordon.cole@example.com,555-0121,USA,California,Los Angeles,West,1945-03-20,M,online,2025-01-03 09:12:08
-22,Albert,Rosenfield,albert.rosenfield@example.com,555-0122,USA,California,Los Angeles,West,1950-06-10,M,online,2025-01-01 19:15:43
-23,Tammy,Preston,tammy.preston@example.com,555-0123,USA,California,Los Angeles,West,1980-01-05,F,retail,2025-01-07 16:53:31
-24,Frank,Truman,frank.truman@example.com,555-0124,USA,Texas,Houston,South,1948-09-12,M,retail,2025-01-15 13:58:34
-25,Hawk,Hill,hawk.hill@example.com,555-0125,USA,Texas,Houston,South,1960-04-25,M,online,2025-01-07 18:41:43
-26,Annie,Blackburn,annie.blackburn@example.com,555-0126,USA,Florida,Miami,Southeast,1970-11-01,F,online,2025-01-09 10:20:11
-27,Mike,Nelson,mike.nelson@example.com,555-0127,USA,Florida,Miami,Southeast,1972-08-18,M,retail,2025-01-13 06:17:59
-28,Sarah,Palmer,sarah.palmer@example.com,555-0128,USA,Florida,Miami,Southeast,1942-02-02,F,retail,2025-01-02 11:27:07
-29,Phillip,Jeffries,phillip.jeffries@example.com,555-0129,USA,Illinois,Chicago,Midwest,1935-07-07,M,online,2025-01-14 01:52:03
-30,Diane,Evans,diane.evans@example.com,555-0130,USA,Illinois,Chicago,Midwest,1958-10-10,F,online,2025-01-10 16:34:06
-31,Denise,Bryson,denise.bryson@example.com,555-0131,USA,Illinois,Chicago,Midwest,1960-05-05,F,retail,2025-01-06 09:21:49
-32,Jerry,Horne,jerry.horne@example.com,555-0132,USA,Colorado,Denver,Mountain,1941-01-15,M,retail,2025-01-17 11:45:12
-33,Dr.,Jacoby,dr.jacoby@example.com,555-0133,USA,Colorado,Denver,Mountain,1938-03-03,M,online,2025-01-08 07:05:50
-34,Log,Lady,log.lady@example.com,555-0134,USA,Colorado,Denver,Mountain,1925-12-12,F,online,2025-01-11 15:50:33
-35,Deputy,Chad,deputy.chad@example.com,555-0135,USA,Oregon,Portland,Northwest,1982-09-09,M,retail,2025-01-04 14:03:19
-36,Steven,Burnett,steven.burnett@example.com,555-0136,USA,Oregon,Portland,Northwest,1975-04-01,M,retail,2025-01-19 12:38:01
-37,Becky,Burnett,becky.burnett@example.com,555-0137,USA,Oregon,Portland,Northwest,1985-08-20,F,online,2025-01-16 00:36:10
-38,Richard,Horne,richard.horne@example.com,555-0138,USA,Arizona,Phoenix,Southwest,1990-02-14,M,online,2025-01-05 03:22:55
-39,Dougie,Jones,dougie.jones@example.com,555-0139,USA,Arizona,Phoenix,Southwest,1965-07-27,M,retail,2025-01-12 11:09:47
-40,Janey-E,Jones,janey-e.jones@example.com,555-0140,USA,Arizona,Phoenix,Southwest,1968-09-01,F,online,2025-01-01 22:58:22
+id,first_name,last_name,email,phone,country,state,city,region,birthday,gender,segment,labels,channel,meta,created_at
+CUST001,First001,Last001,cust001@example.com,555-0001,US,State001,City001,Region001,2025-05-01,male,Regular,newsletter,web,"{""source"":""demo""}","2025-01-10 09:00:00"
+CUST002,First002,Last002,cust002@example.com,555-0002,CA,State002,City002,Region002,2025-05-02,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-01-11 09:00:00"
+CUST003,First003,Last003,cust003@example.com,555-0003,UK,State003,City003,Region003,2025-05-03,other,New,newsletter,retail,"{""source"":""demo""}","2025-01-12 09:00:00"
+CUST004,First004,Last004,cust004@example.com,555-0004,DE,State004,City004,Region004,2025-05-04,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-01-13 09:00:00"
+CUST005,First005,Last005,cust005@example.com,555-0005,FR,State005,City005,Region005,2025-05-05,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-01-14 09:00:00"
+CUST006,First006,Last006,cust006@example.com,555-0006,AU,State006,City006,Region006,2025-05-06,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-01-15 09:00:00"
+CUST007,First007,Last007,cust007@example.com,555-0007,BR,State007,City007,Region007,2025-05-07,male,Regular,newsletter,web,"{""source"":""demo""}","2025-01-16 09:00:00"
+CUST008,First008,Last008,cust008@example.com,555-0008,IN,State008,City008,Region008,2025-05-08,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-01-17 09:00:00"
+CUST009,First009,Last009,cust009@example.com,555-0009,JP,State009,City009,Region009,2025-05-09,other,New,newsletter,retail,"{""source"":""demo""}","2025-01-18 09:00:00"
+CUST010,First010,Last010,cust010@example.com,555-0010,ZA,State010,City010,Region010,2025-05-10,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-01-19 09:00:00"
+CUST011,First011,Last011,cust011@example.com,555-0011,US,State011,City011,Region011,2025-05-11,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-02-10 09:00:00"
+CUST012,First012,Last012,cust012@example.com,555-0012,CA,State012,City012,Region012,2025-05-12,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-02-11 09:00:00"
+CUST013,First013,Last013,cust013@example.com,555-0013,UK,State013,City013,Region013,2025-05-13,male,Regular,newsletter,web,"{""source"":""demo""}","2025-02-12 09:00:00"
+CUST014,First014,Last014,cust014@example.com,555-0014,DE,State014,City014,Region014,2025-05-14,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-02-13 09:00:00"
+CUST015,First015,Last015,cust015@example.com,555-0015,FR,State015,City015,Region015,2025-05-15,other,New,newsletter,retail,"{""source"":""demo""}","2025-02-14 09:00:00"
+CUST016,First016,Last016,cust016@example.com,555-0016,AU,State016,City016,Region016,2025-05-16,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-02-15 09:00:00"
+CUST017,First017,Last017,cust017@example.com,555-0017,BR,State017,City017,Region017,2025-05-17,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-02-16 09:00:00"
+CUST018,First018,Last018,cust018@example.com,555-0018,IN,State018,City018,Region018,2025-05-18,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-02-17 09:00:00"
+CUST019,First019,Last019,cust019@example.com,555-0019,JP,State019,City019,Region019,2025-05-19,male,Regular,newsletter,web,"{""source"":""demo""}","2025-02-18 09:00:00"
+CUST020,First020,Last020,cust020@example.com,555-0020,ZA,State020,City020,Region020,2025-05-20,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-02-19 09:00:00"
+CUST021,First021,Last021,cust021@example.com,555-0021,US,State021,City021,Region021,2025-05-21,other,New,newsletter,retail,"{""source"":""demo""}","2025-02-20 09:00:00"
+CUST022,First022,Last022,cust022@example.com,555-0022,CA,State022,City022,Region022,2025-05-22,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-02-21 09:00:00"
+CUST023,First023,Last023,cust023@example.com,555-0023,UK,State023,City023,Region023,2025-05-23,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-02-22 09:00:00"
+CUST024,First024,Last024,cust024@example.com,555-0024,DE,State024,City024,Region024,2025-05-24,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-02-23 09:00:00"
+CUST025,First025,Last025,cust025@example.com,555-0025,FR,State025,City025,Region025,2025-05-25,male,Regular,newsletter,web,"{""source"":""demo""}","2025-02-24 09:00:00"
+CUST026,First026,Last026,cust026@example.com,555-0026,AU,State026,City026,Region026,2025-05-26,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-03-10 09:00:00"
+CUST027,First027,Last027,cust027@example.com,555-0027,BR,State027,City027,Region027,2025-05-27,other,New,newsletter,retail,"{""source"":""demo""}","2025-03-11 09:00:00"
+CUST028,First028,Last028,cust028@example.com,555-0028,IN,State028,City028,Region028,2025-05-28,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-03-12 09:00:00"
+CUST029,First029,Last029,cust029@example.com,555-0029,JP,State029,City029,Region029,2025-05-01,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-03-13 09:00:00"
+CUST030,First030,Last030,cust030@example.com,555-0030,ZA,State030,City030,Region030,2025-05-02,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-03-14 09:00:00"
+CUST031,First031,Last031,cust031@example.com,555-0031,US,State031,City031,Region031,2025-05-03,male,Regular,newsletter,web,"{""source"":""demo""}","2025-03-15 09:00:00"
+CUST032,First032,Last032,cust032@example.com,555-0032,CA,State032,City032,Region032,2025-05-04,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-03-16 09:00:00"
+CUST033,First033,Last033,cust033@example.com,555-0033,UK,State033,City033,Region033,2025-05-05,other,New,newsletter,retail,"{""source"":""demo""}","2025-03-17 09:00:00"
+CUST034,First034,Last034,cust034@example.com,555-0034,DE,State034,City034,Region034,2025-05-06,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-03-18 09:00:00"
+CUST035,First035,Last035,cust035@example.com,555-0035,FR,State035,City035,Region035,2025-05-07,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-03-19 09:00:00"
+CUST036,First036,Last036,cust036@example.com,555-0036,AU,State036,City036,Region036,2025-05-08,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-03-20 09:00:00"
+CUST037,First037,Last037,cust037@example.com,555-0037,BR,State037,City037,Region037,2025-05-09,male,Regular,newsletter,web,"{""source"":""demo""}","2025-03-21 09:00:00"
+CUST038,First038,Last038,cust038@example.com,555-0038,IN,State038,City038,Region038,2025-05-10,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-03-22 09:00:00"
+CUST039,First039,Last039,cust039@example.com,555-0039,JP,State039,City039,Region039,2025-05-11,other,New,newsletter,retail,"{""source"":""demo""}","2025-03-23 09:00:00"
+CUST040,First040,Last040,cust040@example.com,555-0040,ZA,State040,City040,Region040,2025-05-12,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-03-24 09:00:00"
+CUST041,First041,Last041,cust041@example.com,555-0041,US,State041,City041,Region041,2025-05-13,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-03-25 09:00:00"
+CUST042,First042,Last042,cust042@example.com,555-0042,CA,State042,City042,Region042,2025-05-14,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-03-26 09:00:00"
+CUST043,First043,Last043,cust043@example.com,555-0043,UK,State043,City043,Region043,2025-05-15,male,Regular,newsletter,web,"{""source"":""demo""}","2025-03-27 09:00:00"
+CUST044,First044,Last044,cust044@example.com,555-0044,DE,State044,City044,Region044,2025-05-16,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-03-28 09:00:00"
+CUST045,First045,Last045,cust045@example.com,555-0045,FR,State045,City045,Region045,2025-05-17,other,New,newsletter,retail,"{""source"":""demo""}","2025-03-29 09:00:00"
+CUST046,First046,Last046,cust046@example.com,555-0046,AU,State046,City046,Region046,2025-05-18,male,Regular,"newsletter,loyalty",web,"{""source"":""demo""}","2025-03-30 09:00:00"
+CUST047,First047,Last047,cust047@example.com,555-0047,BR,State047,City047,Region047,2025-05-19,female,VIP,newsletter,mobile,"{""source"":""demo""}","2025-03-31 09:00:00"
+CUST048,First048,Last048,cust048@example.com,555-0048,IN,State048,City048,Region048,2025-05-20,other,New,"newsletter,loyalty",retail,"{""source"":""demo""}","2025-03-30 09:00:00"
+CUST049,First049,Last049,cust049@example.com,555-0049,JP,State049,City049,Region049,2025-05-21,male,Regular,newsletter,web,"{""source"":""demo""}","2025-03-30 09:00:00"
+CUST050,First050,Last050,cust050@example.com,555-0050,ZA,State050,City050,Region050,2025-05-22,female,VIP,"newsletter,loyalty",mobile,"{""source"":""demo""}","2025-03-30 09:00:00"

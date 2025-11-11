@@ -1,5 +1,7 @@
 <?php
 
+// Imports at top of file
+
 namespace App\Filament\Pages;
 
 use App\Services\RfmService;
@@ -8,9 +10,9 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ImportAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
@@ -32,12 +34,14 @@ class SetupWizard extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrench;
 
     public array $rfm = [
-        'rfm_enable' => true,
+        // removed: 'rfm_enable' => true,
         'rfm_bins' => 5,
         'rfm_segments' => 5,
         'rfm_timeframe_days' => 365,
         'analysis_date' => null,
     ];
+
+    // removed: public bool $showAdvanced = false;
 
     public array $segmentStats = [];
 
@@ -60,7 +64,7 @@ class SetupWizard extends Page
     public function mount(): void
     {
         $settings = app(GeneralSettings::class);
-        $this->rfm['rfm_enable'] = $settings->rfm_enable;
+        // Removed: $this->rfm['rfm_enable'] = $settings->rfm_enable;
         $this->rfm['rfm_bins'] = $settings->rfm_bins;
         $this->rfm['rfm_segments'] = $settings->rfm_segments;
         $this->rfm['rfm_timeframe_days'] = $settings->rfm_timeframe_days;
@@ -71,6 +75,8 @@ class SetupWizard extends Page
         $this->segmentDefinitions = $rfmService->getSegmentDefinitions();
         $this->metricDefinitions = $rfmService->getMetricDefinitions();
     }
+
+    public bool $showAdvanced = false;
 
     public function content(Schema $schema): Schema
     {
@@ -158,63 +164,41 @@ class SetupWizard extends Page
                     ]),
 
                     Step::make('RFM Settings')->schema([
-                        Section::make('RFM Configuration')
-                            ->description('Configure your RFM analysis parameters to segment customers based on their purchasing behavior.')
+                        Section::make('RFM Settings')
+                            ->description('Choose timeframe, segments, bins, and analysis date.')
                             ->icon(Heroicon::Cog)
                             ->schema([
                                 \Filament\Schemas\Components\Form::make()->schema([
-                                    Grid::make(1)->schema([
-                                        Toggle::make('rfm.rfm_enable')
-                                            ->label('Enable RFM Segmentation')
-                                            ->helperText('Activate customer segmentation based on Recency, Frequency, and Monetary analysis.')
-                                            ->default(true)
-                                            ->inline(false),
-                                    ]),
-
                                     Grid::make(2)->schema([
-                                        Radio::make('rfm.rfm_segments')
-                                            ->label('Segmentation Level')
-                                            ->helperText('Choose the granularity of customer segments.')
-                                            ->options([
-                                                3 => '3 Segments - Simple segmentation (High, Medium, Low Value)',
-                                                5 => '5 Segments - Standard segmentation (Champions, Loyal, Potential, At Risk, Need Attention)',
-                                                11 => '11 Segments - Advanced segmentation (Detailed customer journey)',
-                                            ])
-                                            ->descriptions([
-                                                3 => 'Best for quick insights and simple reporting',
-                                                5 => 'Recommended for most businesses',
-                                                11 => 'Deep analysis for advanced marketing strategies',
-                                            ])
-                                            ->default(5)
-                                            ->required()
-                                            ->inline(false),
-
-                                        Radio::make('rfm.rfm_timeframe_days')
+                                        Select::make('rfm.rfm_timeframe_days')
                                             ->label('Analysis Timeframe')
-                                            ->helperText('Historical period to analyze customer behavior.')
                                             ->options([
+                                                7 => '7 Days',
+                                                15 => '15 Days',
+                                                30 => '30 Days',
+                                                45 => '45 Days',
                                                 90 => '90 Days (Quarter)',
                                                 180 => '6 Months',
                                                 365 => '1 Year',
                                                 730 => '2 Years',
                                                 1825 => '5 Years',
                                             ])
-                                            ->descriptions([
-                                                90 => 'Recent activity focus',
-                                                180 => 'Short-term trends',
-                                                365 => 'Annual performance',
-                                                730 => 'Long-term patterns',
-                                                1825 => 'Complete history',
+                                            ->required(),
+
+                                        ToggleButtons::make('rfm.rfm_segments')
+                                            ->label('Segmentation Level')
+                                            ->options([
+                                                3 => '3 — Simple',
+                                                5 => '5 — Recommended',
+                                                11 => '11 — Advanced',
                                             ])
-                                            ->default(365)
-                                            ->required()
-                                            ->inline(false),
+                                            ->required(),
                                     ]),
 
                                     Grid::make(2)->schema([
                                         TextInput::make('rfm.rfm_bins')
                                             ->label('RFM Score Bins')
-                                            ->helperText('Number of quantile bins for scoring (2-9). Higher values provide finer granularity.')
+                                            ->helperText('Number of quantile bins for scoring (2–9).')
                                             ->numeric()
                                             ->minValue(2)
                                             ->maxValue(9)
@@ -224,7 +208,6 @@ class SetupWizard extends Page
 
                                         DatePicker::make('rfm.analysis_date')
                                             ->label('Analysis Date')
-                                            ->helperText('Calculate RFM as of this date. Use past dates for historical analysis.')
                                             ->default(now())
                                             ->maxDate(now())
                                             ->native(false)
@@ -233,34 +216,55 @@ class SetupWizard extends Page
                                     ]),
                                 ]),
                             ]),
-                        Section::make('Apply Settings')
-                            ->description('Save your configuration before calculating customer segments.')
-                            ->icon(Heroicon::CheckCircle)
+
+                        \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-advanced-settings-toggle'),
+
+                        Section::make('Advanced RFM Settings')
+                            ->description('Enable segmentation, choose segments, bins, and an analysis date.')
+                            ->icon(Heroicon::Cog)
+                            ->hidden(fn () => ! $this->showAdvanced)
                             ->schema([
-                                \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-save-settings'),
+                                \Filament\Schemas\Components\Form::make()->schema([
+                                    Grid::make(1)->schema([
+                                        Grid::make(2)->schema([
+                                            \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
+                                                ->viewData(fn () => [
+                                                    'modelPath' => 'rfm.rfm_segments',
+                                                    'options' => [
+                                                        3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
+                                                        5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, At Risk, Needs Attention'],
+                                                        11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
+                                                    ],
+                                                ]),
+                                            TextInput::make('rfm.rfm_bins')
+                                                ->label('RFM Score Bins')
+                                                ->numeric()
+                                                ->minValue(2)
+                                                ->maxValue(9)
+                                                ->default(5)
+                                                ->required()
+                                                ->suffix('bins'),
+                                        ]),
+                                        Grid::make(1)->schema([
+                                            DatePicker::make('rfm.analysis_date')
+                                                ->label('Analysis Date')
+                                                ->default(now())
+                                                ->maxDate(now())
+                                                ->native(false)
+                                                ->displayFormat('Y-m-d')
+                                                ->required(),
+                                        ]),
+                                    ]),
+                                ]),
                             ]),
                     ]),
 
-                    Step::make('Calculate & Review')->schema([
-                        Section::make('Customer Segmentation Results')
-                            ->description('Calculate RFM segments and visualize customer distribution across segments.')
-                            ->icon(Heroicon::ChartBar)
-                            ->schema([
-                                \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-run-calc'),
-                                \Filament\Schemas\Components\View::make('filament.pages.rfm-results')
-                                    ->viewData(fn () => [
-                                        'stats' => $this->segmentStats,
-                                        'previousStats' => $this->previousSegmentStats,
-                                        'insights' => $this->insights,
-                                        'segmentDefinitions' => $this->segmentDefinitions,
-                                        'metricDefinitions' => $this->metricDefinitions,
-                                        'marimekkoData' => $this->marimekkoData,
-                                        'transitionsData' => $this->transitionsData,
-                                        'currentAnalysisDate' => $this->currentAnalysisDate,
-                                        'previousAnalysisDate' => $this->previousAnalysisDate,
-                                    ]),
-                            ]),
-                    ]),
+                    Step::make('Apply Settings')
+                        ->description('Save your configuration before calculating customer segments.')
+                        ->icon(Heroicon::CheckCircle)
+                        ->schema([
+                            \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-save-settings'),
+                        ]),
                 ]),
         ]);
     }
@@ -293,7 +297,7 @@ class SetupWizard extends Page
     public function saveRfmSettings(): void
     {
         $settings = app(GeneralSettings::class);
-        $settings->rfm_enable = (bool) ($this->rfm['rfm_enable'] ?? true);
+        // Removed: $settings->rfm_enable = (bool) ($this->rfm['rfm_enable'] ?? true);
         $settings->rfm_bins = (int) ($this->rfm['rfm_bins'] ?? 5);
         $settings->rfm_segments = (int) ($this->rfm['rfm_segments'] ?? 5);
         $settings->rfm_timeframe_days = (int) ($this->rfm['rfm_timeframe_days'] ?? 365);
@@ -338,7 +342,7 @@ class SetupWizard extends Page
         );
 
         // Generate insights by comparing periods
-        if (!isset($this->previousSegmentStats['message']) && !empty($this->previousSegmentStats)) {
+        if (! isset($this->previousSegmentStats['message']) && ! empty($this->previousSegmentStats)) {
             $this->insights = $rfmService->getInsights(
                 $this->segmentStats,
                 $this->previousSegmentStats,
@@ -356,7 +360,7 @@ class SetupWizard extends Page
         );
 
         // Build transitions matrix if we have both periods
-        if (!empty($this->previousSegmentStats) && !isset($this->previousSegmentStats['message'])) {
+        if (! empty($this->previousSegmentStats) && ! isset($this->previousSegmentStats['message'])) {
             $this->transitionsData = $rfmService->buildTransitionsMatrixForAsOfDates(
                 $previousDate,
                 $analysisDate
@@ -376,6 +380,12 @@ class SetupWizard extends Page
             ->body("Analysis complete: {$totalCustomers} customers segmented. Customers table updated with new segments.")
             ->success()
             ->send();
+
+        // Dispatch JavaScript event to update charts with new data
+        $this->dispatch('rfm-data-updated', [
+            'stats' => $this->segmentStats,
+            'totalCustomers' => $totalCustomers,
+        ]);
 
         // Force component re-render to update charts
         $this->dispatch('$refresh');
