@@ -17,6 +17,9 @@ class RfmSegmentDetailsTable extends Widget
     #[Reactive]
     public ?array $segmentDefinitions = null;
 
+    #[Reactive]
+    public ?string $currencySymbol = '$';
+
     public function getTableData(): array
     {
         if (empty($this->segmentStats)) {

@@ -14,6 +14,12 @@ class RfmRevenueChart extends ChartWidget
     #[Reactive]
     public ?array $segmentStats = null;
 
+    #[Reactive]
+    public ?string $currencySymbol = '$';
+
+    #[Reactive]
+    public ?string $currencyCode = 'USD';
+
     protected function getData(): array
     {
         if (empty($this->segmentStats)) {
@@ -35,10 +41,12 @@ class RfmRevenueChart extends ChartWidget
 
         $colors = $this->getSegmentColors();
 
+        $currencyCode = strtoupper($this->currencyCode ?? 'USD');
+
         return [
             'datasets' => [
                 [
-                    'label' => 'Revenue ($)',
+                    'label' => "Revenue ({$currencyCode})",
                     'data' => array_column($revenueData, 'revenue'),
                     'backgroundColor' => array_map(
                         fn ($item) => $colors[$item['segment']] ?? 'rgba(107, 114, 128, 0.5)',
@@ -62,6 +70,8 @@ class RfmRevenueChart extends ChartWidget
 
     protected function getOptions(): array
     {
+        $symbol = json_encode($this->currencySymbol ?? '$');
+
         return [
             'plugins' => [
                 'legend' => [
@@ -69,7 +79,7 @@ class RfmRevenueChart extends ChartWidget
                 ],
                 'tooltip' => [
                     'callbacks' => [
-                        'label' => new \Filament\Support\RawJs('function(context) { return "$" + context.parsed.y.toLocaleString(); }'),
+                        'label' => new \Filament\Support\RawJs("function(context) { const symbol = {$symbol}; const value = context.parsed.y ?? 0; return symbol + value.toLocaleString(); }"),
                     ],
                 ],
             ],
@@ -77,7 +87,7 @@ class RfmRevenueChart extends ChartWidget
                 'y' => [
                     'beginAtZero' => true,
                     'ticks' => [
-                        'callback' => new \Filament\Support\RawJs('function(value) { return "$" + value.toLocaleString(); }'),
+                        'callback' => new \Filament\Support\RawJs("function(value) { const symbol = {$symbol}; return symbol + value.toLocaleString(); }"),
                     ],
                 ],
             ],

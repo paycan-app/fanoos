@@ -14,6 +14,9 @@ class RfmMetricsChart extends ChartWidget
     #[Reactive]
     public ?array $segmentStats = null;
 
+    #[Reactive]
+    public ?string $currencySymbol = '$';
+
     protected function getData(): array
     {
         if (empty($this->segmentStats)) {
@@ -28,7 +31,7 @@ class RfmMetricsChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Avg Monetary ($)',
+                    'label' => 'Avg Monetary ('.($this->currencySymbol ?? '$').')',
                     'data' => array_column($this->segmentStats, 'avg_monetary'),
                     'backgroundColor' => 'rgba(34, 197, 94, 0.5)',
                     'borderColor' => 'rgba(34, 197, 94, 1)',

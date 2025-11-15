@@ -3,40 +3,66 @@
 namespace App\Services;
 
 use App\Models\Customer;
-use App\Settings\GeneralSettings;
+use App\Settings\RfmSettingsContract;
 use Carbon\Carbon;
 
 class RfmService
 {
+    protected string $currencyCode;
+
     public function __construct(
-        protected GeneralSettings $settings
-    ) {}
+        protected RfmSettingsContract $settings
+    ) {
+        $this->currencyCode = config('app.currency', 'USD');
+    }
 
     public function calculateSegments(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
     {
         // Removed: if (! $this->settings->rfm_enable) { return ['message' => 'RFM is disabled in settings.']; }
 
-        $bins = max(2, min(9, $this->settings->rfm_bins));
-        $segments = max(3, min(11, $this->settings->rfm_segments));
-        $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+        $bins = $this->determineBinCount();
+        $segments = $this->determineSegmentCount();
+        $timeframe = $this->determineTimeframeDays($timeframeDays);
         $analysisDate = $asOfDate ?? now();
 
         $customers = Customer::query()->with('orders')->get();
+
+        if ($customers->isEmpty()) {
+            return [
+                'message' => 'No customers available for RFM analysis yet.',
+            ];
+        }
 
         $recencies = [];
         $frequencies = [];
         $monetaries = [];
 
+        $customerMetrics = [];
         foreach ($customers as $c) {
             $r = $this->calculateRecency($c, $timeframe, $analysisDate);
             $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
             $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
+
+            $customerMetrics[$c->id] = [
+                'recency' => $r,
+                'frequency' => $f,
+                'monetary' => $m,
+            ];
 
             if ($r !== null) {
                 $recencies[] = $r;
             }
             $frequencies[] = $f;
             $monetaries[] = $m;
+        }
+
+        $totalFrequency = array_sum($frequencies);
+        $totalMonetary = array_sum($monetaries);
+
+        if ($totalFrequency === 0 && (float) $totalMonetary === 0.0) {
+            return [
+                'message' => 'No order activity detected within the selected timeframe.',
+            ];
         }
 
         $rBreaks = $this->quantileBreaks($recencies, $bins);
@@ -46,9 +72,10 @@ class RfmService
         $stats = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
-            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
-            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
+            $metrics = $customerMetrics[$c->id];
+            $r = $metrics['recency'];
+            $f = $metrics['frequency'];
+            $m = $metrics['monetary'];
 
             $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
             $fScore = $this->scoreValue($f, $fBreaks, $bins);
@@ -87,6 +114,67 @@ class RfmService
         }
 
         return collect($stats)->sortByDesc('customers')->values()->toArray();
+    }
+
+    public function summarizeSegments(array $segmentStats, ?string $currency = null): array
+    {
+        if (empty($segmentStats) || isset($segmentStats['message'])) {
+            return [
+                'has_data' => false,
+                'currency' => $currency ?? $this->currencyCode,
+                'total_customers' => 0,
+                'total_revenue' => [
+                    'value' => 0.0,
+                    'formatted' => $this->formatCurrency(0.0, $currency),
+                ],
+                'average_value' => [
+                    'value' => 0.0,
+                    'formatted' => $this->formatCurrency(0.0, $currency),
+                ],
+                'active_segments' => 0,
+                'high_value_share' => 0.0,
+                'top_segments' => [],
+            ];
+        }
+
+        $currency ??= $this->currencyCode;
+
+        $statsCollection = collect($segmentStats);
+        $totalCustomers = (int) $statsCollection->sum('customers');
+        $totalRevenue = (float) $statsCollection->sum(fn ($row) => $row['customers'] * $row['avg_monetary']);
+        $averageValue = $totalCustomers > 0 ? $totalRevenue / $totalCustomers : 0.0;
+
+        $highValueRevenue = (float) $statsCollection
+            ->whereIn('segment', $this->highValueSegments())
+            ->sum(fn ($row) => $row['customers'] * $row['avg_monetary']);
+
+        return [
+            'has_data' => true,
+            'currency' => $currency,
+            'total_customers' => $totalCustomers,
+            'total_revenue' => [
+                'value' => round($totalRevenue, 2),
+                'formatted' => $this->formatCurrency($totalRevenue, $currency),
+            ],
+            'average_value' => [
+                'value' => round($averageValue, 2),
+                'formatted' => $this->formatCurrency($averageValue, $currency),
+            ],
+            'active_segments' => $statsCollection->count(),
+            'high_value_share' => $totalRevenue > 0
+                ? round(($highValueRevenue / $totalRevenue) * 100, 2)
+                : 0.0,
+            'top_segments' => $statsCollection
+                ->sortByDesc(fn ($row) => $row['customers'] * $row['avg_monetary'])
+                ->take(3)
+                ->values()
+                ->all(),
+        ];
+    }
+
+    public function getCurrencyCode(): string
+    {
+        return $this->currencyCode;
     }
 
     protected function calculateRecency(Customer $customer, int $timeframeDays, Carbon $asOfDate): ?int
@@ -301,9 +389,9 @@ class RfmService
     {
         // Removed: if (! $this->settings->rfm_enable) { return []; }
 
-        $bins = max(2, min(9, $this->settings->rfm_bins));
-        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
-        $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+        $bins = $this->determineBinCount();
+        $segmentCount = $this->determineSegmentCount();
+        $timeframe = $this->determineTimeframeDays($timeframeDays);
         $analysisDate = $asOfDate ?? now();
 
         $customers = Customer::query()->with('orders')->get();
@@ -364,8 +452,8 @@ class RfmService
     {
         // Removed: if (! $this->settings->rfm_enable) { return ['segments' => [], 'binLabels' => [], 'total' => 0]; }
 
-        $bins = max(2, min(9, $this->settings->rfm_bins));
-        $timeframe = $timeframeDays ?? $this->settings->rfm_timeframe_days;
+        $bins = $this->determineBinCount();
+        $timeframe = $this->determineTimeframeDays($timeframeDays);
 
         $map = $this->classifySegmentsMap($timeframe, save: false, asOfDate: $asOfDate);
         if (empty($map)) {
@@ -493,8 +581,8 @@ class RfmService
     {
         // Removed: if (! $this->settings->rfm_enable) { return []; }
 
-        $bins = max(2, min(9, $this->settings->rfm_bins));
-        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
+        $bins = $this->determineBinCount();
+        $segmentCount = $this->determineSegmentCount();
 
         $customers = Customer::query()->with('orders')->get();
 
@@ -599,7 +687,7 @@ class RfmService
         $asOfA = $asOfA instanceof Carbon ? $asOfA->copy()->endOfDay() : Carbon::parse($asOfA)->endOfDay();
         $asOfB = $asOfB instanceof Carbon ? $asOfB->copy()->endOfDay() : Carbon::parse($asOfB)->endOfDay();
 
-        $days = max(1, (int) $this->settings->rfm_timeframe_days);
+        $days = $this->determineTimeframeDays();
 
         $baselineStart = $asOfA->copy()->subDays($days)->startOfDay();
         $baselineEnd = $asOfA;
@@ -615,7 +703,7 @@ class RfmService
      */
     public function getSegmentDefinitions(): array
     {
-        $segmentCount = max(3, min(11, $this->settings->rfm_segments));
+        $segmentCount = $this->determineSegmentCount();
 
         return match ($segmentCount) {
             3 => $this->getThreeSegmentDefinitions(),
@@ -790,11 +878,11 @@ class RfmService
                         'type' => 'alert',
                         'icon' => '⚠️',
                         'title' => "High-Value Customer Decline in {$segment}",
-                        'message' => abs($change)." customers left {$segment} segment (".round($percentChange, 1)."% decline)",
+                        'message' => abs($change)." customers left {$segment} segment (".round($percentChange, 1).'% decline)',
                         'tooltip' => "Compared {$segment} segment between ".
                             $previousDate->format('M d, Y')." ({$previous['customers']} customers) and ".
                             $currentDate->format('M d, Y')." ({$current['customers']} customers). ".
-                            "This represents a potential revenue risk of $".number_format(abs($change) * ($previous['avg_monetary'] ?? 0), 2),
+                            'This represents a potential revenue risk of $'.number_format(abs($change) * ($previous['avg_monetary'] ?? 0), 2),
                         'priority' => 'high',
                     ];
                 }
@@ -812,8 +900,8 @@ class RfmService
                     'title' => "Upgrade Opportunity in {$segment}",
                     'message' => "{$current['customers']} customers ready for engagement to move to higher tiers",
                     'tooltip' => "These {$current['customers']} customers in {$segment} show strong potential. ".
-                        "Average spend: $".number_format($current['avg_monetary'], 2).". ".
-                        "Focus on personalized campaigns and upsell opportunities.",
+                        'Average spend: $'.number_format($current['avg_monetary'], 2).'. '.
+                        'Focus on personalized campaigns and upsell opportunities.',
                     'priority' => 'medium',
                 ];
                 break; // Only show one opportunity to avoid clutter
@@ -830,10 +918,10 @@ class RfmService
                         'type' => 'action',
                         'icon' => '📧',
                         'title' => "Win-Back Campaign Recommended for {$segment}",
-                        'message' => "{$current['customers']} inactive customers represent $".number_format($potentialRevenue, 2)." potential recovery",
+                        'message' => "{$current['customers']} inactive customers represent $".number_format($potentialRevenue, 2).' potential recovery',
                         'tooltip' => "Customers in {$segment} segment haven't purchased recently but have historical value. ".
-                            "Recommended action: Launch targeted win-back campaign with special incentives. ".
-                            "Average historical spend: $".number_format($current['avg_monetary'], 2).".",
+                            'Recommended action: Launch targeted win-back campaign with special incentives. '.
+                            'Average historical spend: $'.number_format($current['avg_monetary'], 2).'.',
                         'priority' => 'medium',
                     ];
                     break;
@@ -856,9 +944,9 @@ class RfmService
                         'type' => 'success',
                         'icon' => '✅',
                         'title' => "Growth Success in {$segment}",
-                        'message' => "{$change} customers upgraded to {$segment} (+".round($percentChange, 1)."%)",
-                        'tooltip' => "Between ".
-                            $previousDate->format('M d, Y')." and ".$currentDate->format('M d, Y').", ".
+                        'message' => "{$change} customers upgraded to {$segment} (+".round($percentChange, 1).'%)',
+                        'tooltip' => 'Between '.
+                            $previousDate->format('M d, Y').' and '.$currentDate->format('M d, Y').', '.
                             "{$change} customers moved into {$segment}. Continue successful strategies that drove this improvement.",
                         'priority' => 'low',
                     ];
@@ -873,11 +961,11 @@ class RfmService
                 'type' => $customerGrowth > 0 ? 'success' : 'alert',
                 'icon' => $customerGrowth > 0 ? '📈' : '📉',
                 'title' => 'Overall Customer Base '.($customerGrowth > 0 ? 'Growth' : 'Decline'),
-                'message' => abs($totalCurrent - $totalPrevious)." customers (".($customerGrowth > 0 ? '+' : '').round($customerGrowth, 1)."%)",
+                'message' => abs($totalCurrent - $totalPrevious).' customers ('.($customerGrowth > 0 ? '+' : '').round($customerGrowth, 1).'%)',
                 'tooltip' => "Total active customers changed from {$totalPrevious} (".
                     $previousDate->format('M d, Y').") to {$totalCurrent} (".
-                    $currentDate->format('M d, Y')."). ".
-                    "This is calculated by comparing customers with at least one order in each respective analysis period.",
+                    $currentDate->format('M d, Y').'). '.
+                    'This is calculated by comparing customers with at least one order in each respective analysis period.',
                 'priority' => abs($customerGrowth) > 15 ? 'high' : 'medium',
             ];
         }
@@ -889,9 +977,9 @@ class RfmService
                 'icon' => 'ℹ️',
                 'title' => 'Stable Customer Base',
                 'message' => 'No significant changes detected between analysis periods',
-                'tooltip' => "Compared RFM analysis from ".
-                    $previousDate->format('M d, Y')." to ".$currentDate->format('M d, Y').". ".
-                    "Customer segments remain relatively stable with no major shifts requiring immediate action.",
+                'tooltip' => 'Compared RFM analysis from '.
+                    $previousDate->format('M d, Y').' to '.$currentDate->format('M d, Y').'. '.
+                    'Customer segments remain relatively stable with no major shifts requiring immediate action.',
                 'priority' => 'low',
             ];
         }
@@ -952,5 +1040,44 @@ class RfmService
                 'calculation' => 'Count of segments with at least one customer',
             ],
         ];
+    }
+
+    protected function determineBinCount(): int
+    {
+        return max(2, min(9, $this->settings->getRfmBins()));
+    }
+
+    protected function determineSegmentCount(): int
+    {
+        return max(3, min(11, $this->settings->getRfmSegments()));
+    }
+
+    protected function determineTimeframeDays(?int $override = null): int
+    {
+        $days = $override ?? $this->settings->getRfmTimeframeDays();
+
+        return max(1, (int) $days);
+    }
+
+    protected function highValueSegments(): array
+    {
+        return [
+            'Champions',
+            'Loyal Customers',
+            'Potential Loyalist',
+            'High Value',
+            'Cannot Lose Them',
+        ];
+    }
+
+    protected function formatCurrency(float $value, ?string $currency = null): string
+    {
+        $currencyCode = $currency ?? $this->currencyCode;
+
+        try {
+            return \Illuminate\Support\Number::currency($value, $currencyCode);
+        } catch (\Throwable) {
+            return $currencyCode.' '.number_format($value, 2);
+        }
     }
 }

@@ -17,32 +17,49 @@ class RfmTreemapChart extends Widget
     #[Reactive]
     public ?array $segmentDefinitions = null;
 
-    public function getTreemapData(): array
+    #[Reactive]
+    public ?string $currencyCode = null;
+
+    #[Reactive]
+    public ?string $currencySymbol = null;
+
+    public function getChartPayload(): array
     {
         if (empty($this->segmentStats)) {
-            return [];
+            return [
+                'labels' => [],
+                'series' => [],
+                'colors' => [],
+            ];
         }
 
         $colors = $this->getSegmentColors();
-        $data = [];
+        $labels = [];
+        $series = [];
+        $seriesMeta = [];
 
         foreach ($this->segmentStats as $stat) {
             $segment = $stat['segment'];
             $customers = $stat['customers'];
-            $totalRevenue = $stat['avg_monetary'] * $customers;
+            $revenue = round($stat['avg_monetary'] * $customers, 2);
 
-            $data[] = [
-                'x' => $segment,
-                'y' => $totalRevenue,
+            $labels[] = $segment;
+            $series[] = $revenue;
+            $seriesMeta[] = [
+                'segment' => $segment,
                 'customers' => $customers,
-                'avgMonetary' => number_format($stat['avg_monetary'], 2),
-                'avgFrequency' => number_format($stat['avg_frequency'], 1),
-                'avgRecency' => number_format($stat['avg_recency'], 0),
-                'fillColor' => $colors[$segment] ?? '#6B7280',
+                'avgMonetary' => round($stat['avg_monetary'], 2),
+                'avgFrequency' => round($stat['avg_frequency'], 1),
+                'avgRecency' => (int) round($stat['avg_recency']),
             ];
         }
 
-        return $data;
+        return [
+            'labels' => $labels,
+            'series' => $series,
+            'colors' => array_map(fn ($label) => $colors[$label] ?? '#6B7280', $labels),
+            'meta' => $seriesMeta,
+        ];
     }
 
     protected function getSegmentColors(): array

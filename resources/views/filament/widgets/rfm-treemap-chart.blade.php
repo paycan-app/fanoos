@@ -12,142 +12,99 @@
 
     <div class="fi-section-content-ctn border-t border-gray-200 dark:border-white/10">
         <div class="fi-section-content p-6">
-            <div id="rfm-treemap-chart-{{ $this->getId() }}" style="height: 400px;" wire:ignore></div>
+            <div id="rfm-treemap-chart-{{ $this->getId() }}" class="h-96" wire:ignore></div>
         </div>
     </div>
 </div>
 
 @assets
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.48.0"></script>
 @endassets
 
 @script
 <script>
-    $wire.on('$refresh', () => {
-        location.reload();
-    });
-
-    // Get treemap data from Livewire component
-    const treemapData = @js($this->getTreemapData());
+    const payload = @js($this->getChartPayload());
     const chartId = 'rfm-treemap-chart-{{ $this->getId() }}';
+    const currencyCode = @js($this->currencyCode ?? 'USD');
+    const currencySymbol = @js($this->currencySymbol ?? '$');
 
-    if (treemapData && treemapData.length > 0) {
-            const options = {
-                series: [{
-                    data: treemapData
+    const container = document.getElementById(chartId);
+
+    if (!payload.series.length && container) {
+        container.innerHTML = `
+            <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                <p>No data available. Please calculate segments first.</p>
+            </div>
+        `;
+    }
+
+    if (payload.series.length && container) {
+        const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currencyCode,
+            maximumFractionDigits: 0,
+        });
+
+        const preciseFormatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currencyCode,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        const chart = new ApexCharts(container, {
+            chart: {
+                type: 'donut',
+                height: 380,
+            },
+            labels: payload.labels,
+            series: payload.series,
+            colors: payload.colors,
+            legend: {
+                position: 'bottom',
+                fontSize: '13px',
+                labels: {
+                    colors: document.documentElement.classList.contains('dark') ? '#f3f4f6' : '#374151',
+                },
+            },
+            dataLabels: {
+                formatter(val, opts) {
+                    const value = payload.series[opts.seriesIndex] ?? 0;
+                    return `${val.toFixed(1)}%`;
+                },
+            },
+            tooltip: {
+                y: [{
+                    formatter(value, opts) {
+                        const meta = payload.meta[opts.seriesIndex] ?? {};
+
+                        return [
+                            `Revenue: ${preciseFormatter.format(value ?? 0)}`,
+                            `Customers: ${Number(meta.customers ?? 0).toLocaleString()}`,
+                            `Avg Spend: ${preciseFormatter.format(meta.avgMonetary ?? 0)}`,
+                            `Avg Frequency: ${Number(meta.avgFrequency ?? 0).toLocaleString()} orders`,
+                            `Avg Recency: ${meta.avgRecency ?? 0} days`,
+                        ].join('<br>');
+                    },
                 }],
-                chart: {
-                    type: 'treemap',
-                    height: 400,
-                    toolbar: {
-                        show: true,
-                        tools: {
-                            download: true,
-                            zoom: false,
-                            zoomin: false,
-                            zoomout: false,
-                            pan: false,
-                            reset: false
-                        }
+            },
+            stroke: {
+                colors: ['#ffffff'],
+                width: 2,
+            },
+            responsive: [
+                {
+                    breakpoint: 768,
+                    options: {
+                        chart: {
+                            height: 320,
+                        },
                     },
-                    animations: {
-                        enabled: true,
-                        speed: 800,
-                        animateGradually: {
-                            enabled: true,
-                            delay: 150
-                        }
-                    }
                 },
-                plotOptions: {
-                    treemap: {
-                        distributed: true,
-                        enableShades: false,
-                        colorScale: {
-                            ranges: treemapData.map(item => ({
-                                from: item.y,
-                                to: item.y,
-                                color: item.fillColor
-                            }))
-                        }
-                    }
-                },
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        colors: ['#fff']
-                    },
-                    formatter: function(text, op) {
-                        return [text, op.value(op.dataPointIndex).toLocaleString('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                        })];
-                    }
-                },
-                tooltip: {
-                    enabled: true,
-                    custom: function({seriesIndex, dataPointIndex, w}) {
-                        const data = w.config.series[0].data[dataPointIndex];
-                        return `
-                            <div class="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg">
-                                <div class="font-bold text-sm mb-1">${data.x}</div>
-                                <div class="text-xs space-y-1">
-                                    <div><strong>Customers:</strong> ${data.customers.toLocaleString()}</div>
-                                    <div><strong>Total Revenue:</strong> $${data.y.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                                    <div><strong>Avg Monetary:</strong> $${data.avgMonetary}</div>
-                                    <div><strong>Avg Frequency:</strong> ${data.avgFrequency} orders</div>
-                                    <div><strong>Avg Recency:</strong> ${data.avgRecency} days</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                },
-                legend: {
-                    show: false
-                },
-                theme: {
-                    mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-                }
-            };
+            ],
+        });
 
-        // Render chart
-        const chartElement = document.querySelector(`#${chartId}`);
-        if (chartElement) {
-            const chart = new ApexCharts(chartElement, options);
-            chart.render();
-
-            // Listen for theme changes
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.attributeName === 'class') {
-                        const isDark = document.documentElement.classList.contains('dark');
-                        chart.updateOptions({
-                            theme: {
-                                mode: isDark ? 'dark' : 'light'
-                            }
-                        });
-                    }
-                });
-            });
-
-            observer.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-        }
-    } else {
-        const chartElement = document.querySelector(`#${chartId}`);
-        if (chartElement) {
-            chartElement.innerHTML = `
-                <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                    <p>No data available. Please calculate segments first.</p>
-                </div>
-            `;
-        }
+        chart.render();
     }
 </script>
 @endscript

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Settings\GeneralSettings;
+use App\Settings\RfmSettingsContract;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +13,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ($this->app->runningUnitTests()) {
+            config(['settings.migrations_paths' => []]);
+        }
+
+        $this->app->bind(RfmSettingsContract::class, GeneralSettings::class);
     }
 
     /**

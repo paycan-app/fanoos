@@ -95,14 +95,14 @@
                                 <td class="fi-ta-cell p-0 first:pl-3 last:pr-3 sm:last:pr-6">
                                     <div class="flex justify-end px-3 py-4">
                                         <span class="text-sm text-gray-950 dark:text-white font-semibold">
-                                            ${{ number_format($row['total_revenue'], 0) }}
+                                            {{ $this->currencySymbol }}{{ number_format($row['total_revenue'], 0) }}
                                         </span>
                                     </div>
                                 </td>
                                 <td class="fi-ta-cell p-0 first:pl-3 last:pr-3 sm:last:pr-6">
                                     <div class="flex justify-end px-3 py-4">
                                         <span class="text-sm text-gray-950 dark:text-white">
-                                            ${{ number_format($row['avg_monetary'], 2) }}
+                                            {{ $this->currencySymbol }}{{ number_format($row['avg_monetary'], 2) }}
                                         </span>
                                     </div>
                                 </td>
@@ -145,7 +145,7 @@
                                 <td class="fi-ta-cell p-0 first:pl-3 last:pr-3 sm:last:pr-6">
                                     <div class="flex justify-end px-3 py-3.5">
                                         <span class="text-sm font-semibold text-gray-950 dark:text-white">
-                                            ${{ number_format(collect($tableData)->sum('total_revenue'), 0) }}
+                                            {{ $this->currencySymbol }}{{ number_format(collect($tableData)->sum('total_revenue'), 0) }}
                                         </span>
                                     </div>
                                 </td>
