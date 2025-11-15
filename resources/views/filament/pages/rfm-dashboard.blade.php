@@ -21,7 +21,7 @@
             </div>
         </div>
     @else
-        <div class="space-y-8">
+        <div class="space-y-10">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <x-filament::card>
                     <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Revenue ({{ $this->timeframeLabel }})</p>
@@ -49,12 +49,13 @@
             </div>
 
             @if(!empty($this->insights))
-                <x-filament::card>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Opportunity radar</h3>
-                        <span class="text-xs uppercase tracking-wide text-gray-400">{{ count($this->insights) }} insights</span>
-                    </div>
-                    <div class="grid gap-4 md:grid-cols-2">
+                <x-filament::section>
+                    <x-slot name="heading">Opportunity radar</x-slot>
+                    <x-slot name="description">
+                        {{ count($this->insights) }} insights from the latest analysis window.
+                    </x-slot>
+
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
                         @foreach($this->insights as $insight)
                             <article class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/80 p-4 shadow-sm">
                                 <div class="flex items-start gap-3">
@@ -72,70 +73,69 @@
                             </article>
                         @endforeach
                     </div>
-                </x-filament::card>
+                </x-filament::section>
             @endif
 
-            <section class="grid gap-6 lg:grid-cols-12">
-                <div class="lg:col-span-7 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Segment momentum</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Customer movement since the previous window</p>
+            <div class="grid gap-6 xl:grid-cols-12">
+                <div class="xl:col-span-8 space-y-6">
+                    <x-filament::section>
+                        <x-slot name="heading">Segment momentum</x-slot>
+                        <x-slot name="description">Customer movement compared to {{ $this->previousAnalysisDate }}</x-slot>
+
+                        <div class="mt-6 overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Segment</th>
+                                        <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Customers</th>
+                                        <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Avg spend</th>
+                                        <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Movement</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    @forelse($this->segmentMomentum as $row)
+                                        <tr>
+                                            <td class="py-3 pr-3">
+                                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $row['segment'] }}</span>
+                                            </td>
+                                            <td class="py-3 text-right text-sm text-gray-700 dark:text-gray-300">
+                                                {{ number_format($row['customers']) }}
+                                            </td>
+                                            <td class="py-3 text-right text-sm text-gray-700 dark:text-gray-300">
+                                                {{ $symbol }}{{ number_format($row['avg_monetary'], 0) }}
+                                            </td>
+                                            <td class="py-3 text-right text-sm font-medium">
+                                                @if($row['delta_customers'] === 0)
+                                                    <span class="text-gray-500 dark:text-gray-400">–</span>
+                                                @else
+                                                    <span class="{{ $row['delta_customers'] > 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
+                                                        {{ $row['delta_customers'] > 0 ? '▲' : '▼' }}
+                                                        {{ abs($row['delta_customers']) }}
+                                                        @if(! is_null($row['delta_percent']))
+                                                            ({{ $row['delta_percent'] > 0 ? '+' : '-' }}{{ abs($row['delta_percent']) }}%)
+                                                        @endif
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                No historical comparison available.
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                        <span class="text-xs text-gray-400">Δ vs {{ $this->previousAnalysisDate }}</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                            <thead>
-                                <tr>
-                                    <th class="text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Segment</th>
-                                    <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Customers</th>
-                                    <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Avg spend</th>
-                                    <th class="text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 pb-3">Movement</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                                @forelse($this->segmentMomentum as $row)
-                                    <tr>
-                                        <td class="py-3 pr-3">
-                                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $row['segment'] }}</span>
-                                        </td>
-                                        <td class="py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                                            {{ number_format($row['customers']) }}
-                                        </td>
-                                        <td class="py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                                            {{ $symbol }}{{ number_format($row['avg_monetary'], 0) }}
-                                        </td>
-                                        <td class="py-3 text-right text-sm font-medium">
-                                            @if($row['delta_customers'] === 0)
-                                                <span class="text-gray-500 dark:text-gray-400">–</span>
-                                            @else
-                                                <span class="{{ $row['delta_customers'] > 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400' }}">
-                                                    {{ $row['delta_customers'] > 0 ? '▲' : '▼' }}
-                                                    {{ abs($row['delta_customers']) }}
-                                                    @if(! is_null($row['delta_percent']))
-                                                        ({{ $row['delta_percent'] > 0 ? '+' : '-' }}{{ abs($row['delta_percent']) }}%)
-                                                    @endif
-                                                </span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                            No historical comparison available.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                    </x-filament::section>
                 </div>
-                <div class="lg:col-span-5 space-y-6">
-                    <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Top revenue builders</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Segments contributing the most revenue</p>
-                        <div class="space-y-4">
+                <div class="xl:col-span-4 space-y-6">
+                    <x-filament::section>
+                        <x-slot name="heading">Top revenue builders</x-slot>
+                        <x-slot name="description">Segments contributing the most revenue</x-slot>
+
+                        <div class="mt-6 space-y-4">
                             @foreach($this->topSegments as $segment)
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -153,11 +153,13 @@
                                 <p class="text-sm text-gray-500 dark:text-gray-400">Once data is available you'll see the leading segments here.</p>
                             @endif
                         </div>
-                    </div>
-                    <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">Win-back priority list</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">High-value groups drifting away</p>
-                        <div class="space-y-4">
+                    </x-filament::section>
+
+                    <x-filament::section>
+                        <x-slot name="heading">Win-back priority list</x-slot>
+                        <x-slot name="description">High-value groups drifting away</x-slot>
+
+                        <div class="mt-6 space-y-4">
                             @foreach($this->winBackTargets as $target)
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -175,50 +177,56 @@
                                 <p class="text-sm text-gray-500 dark:text-gray-400">No at-risk segments detected.</p>
                             @endif
                         </div>
-                    </div>
+                    </x-filament::section>
                 </div>
-            </section>
+            </div>
 
-            <section class="grid gap-6 lg:grid-cols-2">
-                @livewire('app.filament.widgets.rfm-segment-distribution-chart', ['segmentStats' => $this->segmentStats])
-                @livewire('app.filament.widgets.rfm-revenue-chart', [
-                    'segmentStats' => $this->segmentStats,
-                    'currencySymbol' => $this->currencySymbol,
-                    'currencyCode' => $this->currencyCode,
-                ])
-            </section>
+            <div class="space-y-10 mt-12">
+                @livewire('app.filament.widgets.rfm-segment-distribution-chart', ['segmentStats' => $this->segmentStats], key('rfm-segment-distribution-chart'))
 
-            <section class="grid gap-6 lg:grid-cols-2">
+                <div class="grid gap-6 lg:grid-cols-2">
+                    @livewire('app.filament.widgets.rfm-revenue-chart', [
+                        'segmentStats' => $this->segmentStats,
+                        'currencySymbol' => $this->currencySymbol,
+                        'currencyCode' => $this->currencyCode,
+                    ], key('rfm-revenue-chart'))
+
+                    <x-filament::section>
+                        <x-slot name="heading">Metric cheat sheet</x-slot>
+                        <x-slot name="description">Quick definitions for every KPI in this dashboard</x-slot>
+
+                        <div class="mt-6 grid gap-3">
+                            @foreach($this->metricDefinitions as $metric)
+                                <div class="rounded-xl bg-gray-50 dark:bg-gray-800/60 px-4 py-3">
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $metric['name'] }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $metric['description'] }}</p>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $metric['business_meaning'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    </x-filament::section>
+                </div>
+
                 @livewire('app.filament.widgets.rfm-metrics-chart', [
                     'segmentStats' => $this->segmentStats,
                     'currencySymbol' => $this->currencySymbol,
-                ])
-                <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Metric cheat sheet</h3>
-                    <div class="mt-4 grid gap-3">
-                        @foreach($this->metricDefinitions as $metric)
-                            <div class="rounded-xl bg-gray-50 dark:bg-gray-800/60 px-4 py-3">
-                                <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $metric['name'] }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $metric['description'] }}</p>
-                                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ $metric['business_meaning'] }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </section>
+                ], key('rfm-metrics-chart'))
 
-            @livewire('app.filament.widgets.rfm-treemap-chart', [
-                'segmentStats' => $this->segmentStats,
-                'segmentDefinitions' => $this->segmentDefinitions,
-                'currencyCode' => $this->currencyCode,
-                'currencySymbol' => $this->currencySymbol,
-            ])
+                @livewire('app.filament.widgets.rfm-treemap-chart', [
+                    'segmentStats' => $this->segmentStats,
+                    'segmentDefinitions' => $this->segmentDefinitions,
+                    'currencyCode' => $this->currencyCode,
+                    'currencySymbol' => $this->currencySymbol,
+                ], key('rfm-treemap-chart'))
+            </div>
 
-            @livewire('app.filament.widgets.rfm-segment-details-table', [
-                'segmentStats' => $this->segmentStats,
-                'segmentDefinitions' => $this->segmentDefinitions,
-                'currencySymbol' => $this->currencySymbol,
-            ])
+            <div class="mt-12">
+                @livewire('app.filament.widgets.rfm-segment-details-table', [
+                    'segmentStats' => $this->segmentStats,
+                    'segmentDefinitions' => $this->segmentDefinitions,
+                    'currencySymbol' => $this->currencySymbol,
+                ], key('rfm-segment-details-table'))
+            </div>
         </div>
     @endif
 </x-filament-panels::page>

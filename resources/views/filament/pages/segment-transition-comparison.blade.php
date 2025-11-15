@@ -18,88 +18,112 @@
             $customerComparison = data_get($changes, 'totals.customers.comparison', 0);
             $activeComparison = data_get($changes, 'totals.active_customers.comparison', 0);
             $monetaryComparison = data_get($changes, 'totals.monetary.comparison', 0);
+            $primaryInsight = data_get($changes, 'insights.0');
+            $secondaryInsight = data_get($changes, 'insights.1');
+            $additionalInsights = collect($changes['insights'] ?? [])->skip(2)->values();
         @endphp
 
-        <div class="grid gap-4 md:grid-cols-2">
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Period A</p>
-                        <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-50">{{ $snapshotA['as_of'] ?? '—' }}</p>
-                    </div>
-                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $snapshotA['timeframe_days'] ?? '—' }}-day lookback</span>
-                </div>
-                <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Total customers</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format($snapshotA['total_customers'] ?? 0) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Active customers</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format($snapshotA['active_customers'] ?? 0) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Total monetary</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ data_get($snapshotA, 'metrics.total_monetary_formatted', $baselineCurrency.' 0.00') }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg frequency</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format(data_get($snapshotAMetrics, 'avg_frequency', 0), 2) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg monetary</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format(data_get($snapshotAMetrics, 'avg_monetary', 0), 2) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg recency</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ data_get($snapshotAMetrics, 'avg_recency') !== null ? number_format(data_get($snapshotAMetrics, 'avg_recency'), 1).' days' : '—' }}</dd>
-                    </div>
-                </dl>
-            </div>
+        <div id="segmentComparisonData"
+             data-matrix="{{ base64_encode(json_encode($transitionMatrix)) }}"
+             data-sankey="{{ base64_encode(json_encode($sankeyData)) }}"
+             class="hidden"
+             aria-hidden="true"></div>
 
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Period B</p>
-                        <p class="text-xl font-semibold text-neutral-900 dark:text-neutral-50">{{ $snapshotB['as_of'] ?? '—' }}</p>
-                    </div>
-                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ $snapshotB['timeframe_days'] ?? '—' }}-day lookback</span>
-                </div>
+        <x-filament::section>
+            <x-slot name="heading">Segment Sankey flow</x-slot>
+            <x-slot name="description">Visualize how customers move between segments from Period A to Period B.</x-slot>
+
+            @if(!empty($sankeyData['node']['labels']))
+                <div id="segmentSankey" class="w-full" style="min-height: 560px;"></div>
+            @else
+                <p class="py-10 text-center text-sm text-neutral-500 dark:text-neutral-300">Run an analysis to populate the Sankey flow.</p>
+            @endif
+        </x-filament::section>
+
+        <div class="grid gap-4 md:grid-cols-2">
+            <x-filament::section>
+                <x-slot name="heading">Period A Snapshot</x-slot>
+                <x-slot name="description">Baseline measured as of {{ $snapshotA['as_of'] ?? '—' }}.</x-slot>
+
                 <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Total customers</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format($snapshotB['total_customers'] ?? 0) }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Total customers</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format($snapshotA['total_customers'] ?? 0) }}</dd>
                     </div>
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Active customers</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format($snapshotB['active_customers'] ?? 0) }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Active customers</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format($snapshotA['active_customers'] ?? 0) }}</dd>
                     </div>
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Total monetary</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ data_get($snapshotB, 'metrics.total_monetary_formatted', $comparisonCurrency.' 0.00') }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Total monetary</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ data_get($snapshotA, 'metrics.total_monetary_formatted', $baselineCurrency.' 0.00') }}</dd>
                     </div>
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg frequency</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format(data_get($snapshotBMetrics, 'avg_frequency', 0), 2) }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg frequency</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format(data_get($snapshotAMetrics, 'avg_frequency', 0), 2) }}</dd>
                     </div>
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg monetary</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ number_format(data_get($snapshotBMetrics, 'avg_monetary', 0), 2) }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg monetary</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format(data_get($snapshotAMetrics, 'avg_monetary', 0), 2) }}</dd>
                     </div>
                     <div>
-                        <dt class="text-neutral-500 dark:text-neutral-400">Avg recency</dt>
-                        <dd class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ data_get($snapshotBMetrics, 'avg_recency') !== null ? number_format(data_get($snapshotBMetrics, 'avg_recency'), 1).' days' : '—' }}</dd>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg recency</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ data_get($snapshotAMetrics, 'avg_recency') !== null ? number_format(data_get($snapshotAMetrics, 'avg_recency'), 1).' days' : '—' }}</dd>
                     </div>
                 </dl>
-            </div>
+            </x-filament::section>
+
+            <x-filament::section>
+                <x-slot name="heading">Period B Snapshot</x-slot>
+                <x-slot name="description">Comparison measured as of {{ $snapshotB['as_of'] ?? '—' }}.</x-slot>
+                <dl class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Total customers</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format($snapshotB['total_customers'] ?? 0) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Active customers</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format($snapshotB['active_customers'] ?? 0) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Total monetary</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ data_get($snapshotB, 'metrics.total_monetary_formatted', $comparisonCurrency.' 0.00') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg frequency</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format(data_get($snapshotBMetrics, 'avg_frequency', 0), 2) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg monetary</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ number_format(data_get($snapshotBMetrics, 'avg_monetary', 0), 2) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-neutral-500 dark:text-neutral-300">Avg recency</dt>
+                        <dd class="text-lg font-semibold text-neutral-900 dark:text-white">{{ data_get($snapshotBMetrics, 'avg_recency') !== null ? number_format(data_get($snapshotBMetrics, 'avg_recency'), 1).' days' : '—' }}</dd>
+                    </div>
+                </dl>
+            </x-filament::section>
         </div>
 
-        <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-            <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Change Highlights</h3>
+        <x-filament::section>
+            <x-slot name="heading">Change Highlights</x-slot>
+            <div class="mt-3 rounded-md border-l-4 border-primary-400 bg-primary-50/70 px-4 py-3 text-sm text-primary-900 dark:border-primary-300 dark:bg-primary-500/10 dark:text-primary-100">
+                <p>{{ $primaryInsight ?? 'Choose two periods and run the analysis to generate human-readable insights.' }}</p>
+                @if($secondaryInsight)
+                    <p class="mt-1">{{ $secondaryInsight }}</p>
+                @endif
+                @if($additionalInsights->isNotEmpty())
+                    <ul class="mt-2 list-disc space-y-1 pl-5 text-primary-900/80 dark:text-primary-100/80">
+                        @foreach($additionalInsights as $insight)
+                            <li>{{ $insight }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-3">
                 <div>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">Net customers</p>
-                    <p class="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
+                    <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
                         {{ number_format($customerComparison ?? 0) }}
                         <span class="text-sm {{ $customerDeltaClass }}">
                             ({{ $customerDelta > 0 ? '+' : '' }}{{ number_format($customerDelta) }})
@@ -108,7 +132,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">Active customers</p>
-                    <p class="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
+                    <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
                         {{ number_format($activeComparison ?? 0) }}
                         <span class="text-sm {{ $activeDeltaClass }}">
                             ({{ $activeDelta > 0 ? '+' : '' }}{{ number_format($activeDelta) }})
@@ -117,7 +141,7 @@
                 </div>
                 <div>
                     <p class="text-sm text-neutral-500 dark:text-neutral-400">Total monetary</p>
-                    <p class="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
+                    <p class="text-2xl font-semibold text-neutral-900 dark:text-white">
                         {{ $comparisonCurrency }} {{ number_format($monetaryComparison ?? 0, 2) }}
                         <span class="text-sm {{ $monetaryDeltaClass }}">
                             ({{ $monetaryDelta > 0 ? '+' : '' }}{{ number_format($monetaryDelta, 2) }})
@@ -129,50 +153,44 @@
             <div class="mt-6 grid gap-4 md:grid-cols-2">
                 <div>
                     <h4 class="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Top gainers</h4>
-                    <ul class="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+                    <div class="mt-2 flex flex-wrap gap-2">
                         @forelse($changes['top_gainers'] ?? [] as $item)
-                            <li class="flex items-center justify-between rounded-md border border-emerald-100 px-3 py-2 text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-300">
-                                <span>{{ $item['segment'] }}</span>
-                                <span>+{{ number_format($item['delta']) }}</span>
-                            </li>
+                            <x-filament::badge color="success">
+                                <span class="font-semibold">{{ $item['segment'] }}</span>
+                                <span class="ml-2 text-xs">+{{ number_format($item['delta']) }}</span>
+                            </x-filament::badge>
                         @empty
-                            <li class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-neutral-500 dark:border-neutral-600 dark:text-neutral-400">
-                                No positive movement yet.
-                            </li>
+                            <x-filament::badge color="gray">No positive movement yet.</x-filament::badge>
                         @endforelse
-                    </ul>
+                    </div>
                 </div>
                 <div>
                     <h4 class="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Top losses</h4>
-                    <ul class="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+                    <div class="mt-2 flex flex-wrap gap-2">
                         @forelse($changes['top_losers'] ?? [] as $item)
-                            <li class="flex items-center justify-between rounded-md border border-rose-100 px-3 py-2 text-rose-600 dark:border-rose-500/20 dark:text-rose-300">
-                                <span>{{ $item['segment'] }}</span>
-                                <span>{{ number_format($item['delta']) }}</span>
-                            </li>
+                            <x-filament::badge color="danger">
+                                <span class="font-semibold">{{ $item['segment'] }}</span>
+                                <span class="ml-2 text-xs">{{ number_format($item['delta']) }}</span>
+                            </x-filament::badge>
                         @empty
-                            <li class="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-neutral-500 dark:border-neutral-600 dark:text-neutral-400">
-                                No negative movement detected.
-                            </li>
+                            <x-filament::badge color="gray">No negative movement detected.</x-filament::badge>
                         @endforelse
-                    </ul>
+                    </div>
                 </div>
             </div>
+        </x-filament::section>
 
-            <div class="mt-6">
-                <h4 class="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Insights</h4>
-                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-700 dark:text-neutral-300">
-                    @forelse($changes['insights'] ?? [] as $insight)
-                        <li>{{ $insight }}</li>
-                    @empty
-                        <li>No notable insights yet. Adjust dates to load data.</li>
-                    @endforelse
-                </ul>
-            </div>
-        </div>
+        <x-filament::section>
+            <x-slot name="heading">Transitions Heatmap</x-slot>
+            @if(($transitionMatrix['labels'] ?? []) && ($transitionMatrix['matrix'] ?? []))
+                <div id="segmentComparisonHeatmap" class="mt-4 w-full" style="min-height: 520px;"></div>
+            @else
+                <p class="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">Not enough data to render the heatmap.</p>
+            @endif
+        </x-filament::section>
 
-        <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-            <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Segment movement detail</h3>
+        <x-filament::section>
+            <x-slot name="heading">Segment Movement Detail</x-slot>
             <div class="mt-4 overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead>
@@ -210,29 +228,10 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </x-filament::section>
 
-        <div class="grid gap-4 lg:grid-cols-2">
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Transitions heatmap</h3>
-                @if(($transitionMatrix['labels'] ?? []) && ($transitionMatrix['matrix'] ?? []))
-                    <div id="segmentComparisonHeatmap" style="height: 480px;"></div>
-                @else
-                    <p class="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">Not enough data to render the heatmap.</p>
-                @endif
-            </div>
-            <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Segment Sankey flow</h3>
-                @if(!empty($sankeyData['node']['labels']))
-                    <div id="segmentSankey" style="height: 480px;"></div>
-                @else
-                    <p class="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">Sankey will appear once transitions are available.</p>
-                @endif
-            </div>
-        </div>
-
-        <div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-            <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">Transitions matrix</h3>
+        <x-filament::section>
+            <x-slot name="heading">Transitions Matrix</x-slot>
             <div class="mt-4 overflow-x-auto">
                 @if(($transitionMatrix['labels'] ?? []) && ($transitionMatrix['matrix'] ?? []))
                     <table class="min-w-full text-sm">
@@ -259,64 +258,151 @@
                     <p class="py-10 text-center text-sm text-neutral-500 dark:text-neutral-400">Transitions matrix will populate once both dates contain activity.</p>
                 @endif
             </div>
-        </div>
+        </x-filament::section>
     @endif
 </div>
 
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const matrix = @json($transitionMatrix);
-        const sankey = @json($sankeyData);
-        const isDark = document.documentElement.classList.contains('dark');
-        const layoutDefaults = {
-            paper_bgcolor: isDark ? '#262626' : '#ffffff',
-            plot_bgcolor: isDark ? '#262626' : '#ffffff',
-            font: { color: isDark ? '#f5f5f5' : '#171717', family: 'Inter, system-ui, sans-serif' },
-            margin: { t: 40, r: 40, b: 80, l: 120 },
+    (function () {
+        const decodePayload = (value) => {
+            if (!value) {
+                return null;
+            }
+
+            try {
+                return JSON.parse(atob(value));
+            } catch (error) {
+                console.error('Failed to decode segment comparison payload', error);
+                return null;
+            }
         };
 
-        if (matrix.labels && matrix.labels.length && matrix.matrix && matrix.matrix.length) {
-            Plotly.newPlot('segmentComparisonHeatmap', [{
-                z: matrix.matrix,
-                x: matrix.labels,
-                y: matrix.labels,
-                type: 'heatmap',
-                colorscale: 'Viridis',
-                hoverongaps: false,
-                hovertemplate: 'From %{y} to %{x}<br>Count: %{z}<extra></extra>',
-            }], {
-                ...layoutDefaults,
-                xaxis: { title: 'To segment', color: layoutDefaults.font.color, gridcolor: isDark ? '#404040' : '#e5e5e5' },
-                yaxis: { title: 'From segment', color: layoutDefaults.font.color, gridcolor: isDark ? '#404040' : '#e5e5e5', autorange: 'reversed' },
-                showlegend: false,
-            }, {
-                responsive: true,
-                displayModeBar: true,
-                displaylogo: false,
+        const getPayload = () => {
+            const holder = document.getElementById('segmentComparisonData');
+
+            if (!holder) {
+                return { matrix: null, sankey: null };
+            }
+
+            return {
+                matrix: decodePayload(holder.dataset.matrix || ''),
+                sankey: decodePayload(holder.dataset.sankey || ''),
+            };
+        };
+
+        const computeHeight = (element, fallback = 520) => {
+            if (!element) {
+                return fallback;
+            }
+
+            const width = element.clientWidth || fallback;
+
+            return Math.max(fallback, width * 0.55);
+        };
+
+        const renderCharts = () => {
+            if (typeof Plotly === 'undefined') {
+                return;
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const layoutDefaults = {
+                paper_bgcolor: isDark ? '#1f1f1f' : '#ffffff',
+                plot_bgcolor: isDark ? '#1f1f1f' : '#ffffff',
+                font: { color: isDark ? '#f5f5f5' : '#171717', family: 'Inter, system-ui, sans-serif' },
+                margin: { t: 40, r: 40, b: 80, l: 120 },
+            };
+
+            const { matrix, sankey } = getPayload();
+            const heatmapEl = document.getElementById('segmentComparisonHeatmap');
+            const sankeyEl = document.getElementById('segmentSankey');
+
+            if (heatmapEl) {
+                if (matrix?.labels?.length && matrix?.matrix?.length) {
+                    Plotly.react(heatmapEl, [{
+                        z: matrix.matrix,
+                        x: matrix.labels,
+                        y: matrix.labels,
+                        type: 'heatmap',
+                        colorscale: 'Viridis',
+                        hoverongaps: false,
+                        hovertemplate: 'From %{y} to %{x}<br>Count: %{z}<extra></extra>',
+                    }], {
+                        ...layoutDefaults,
+                        xaxis: { title: 'To segment', color: layoutDefaults.font.color, gridcolor: isDark ? '#404040' : '#e5e5e5' },
+                        yaxis: { title: 'From segment', color: layoutDefaults.font.color, gridcolor: isDark ? '#404040' : '#e5e5e5', autorange: 'reversed' },
+                        showlegend: false,
+                        height: computeHeight(heatmapEl),
+                    }, {
+                        responsive: true,
+                        displayModeBar: true,
+                        displaylogo: false,
+                    });
+                } else {
+                    Plotly.purge(heatmapEl);
+                }
+            }
+
+            if (sankeyEl) {
+                if (sankey?.node?.labels?.length) {
+                    Plotly.react(sankeyEl, [{
+                        type: 'sankey',
+                        orientation: 'h',
+                        node: {
+                            pad: 24,
+                            thickness: 18,
+                            label: sankey.node.labels,
+                            color: sankey.node.colors,
+                        },
+                        link: sankey.link ?? {},
+                    }], {
+                        ...layoutDefaults,
+                        margin: { t: 20, r: 40, b: 40, l: 40 },
+                        height: computeHeight(sankeyEl, 560),
+                    }, {
+                        responsive: true,
+                        displayModeBar: true,
+                        displaylogo: false,
+                    });
+                } else {
+                    Plotly.purge(sankeyEl);
+                }
+            }
+        };
+
+        const scheduleRender = () => requestAnimationFrame(renderCharts);
+
+        if (!window.segmentComparisonChartsInitialized) {
+            window.segmentComparisonChartsInitialized = true;
+
+            document.addEventListener('DOMContentLoaded', scheduleRender);
+
+            const registerLivewireHook = () => {
+                if (window.Livewire) {
+                    Livewire.on('segment-comparison-refreshed', scheduleRender);
+                }
+            };
+
+            if (window.Livewire) {
+                registerLivewireHook();
+            } else {
+                document.addEventListener('livewire:init', () => registerLivewireHook(), { once: true });
+            }
+
+            const themeObserver = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    if (mutation.attributeName === 'class') {
+                        scheduleRender();
+                        break;
+                    }
+                }
             });
+
+            themeObserver.observe(document.documentElement, { attributes: true });
         }
 
-        if (sankey.node && sankey.node.labels && sankey.node.labels.length) {
-            Plotly.newPlot('segmentSankey', [{
-                type: 'sankey',
-                orientation: 'h',
-                node: {
-                    pad: 24,
-                    thickness: 18,
-                    label: sankey.node.labels,
-                    color: sankey.node.colors,
-                },
-                link: sankey.link ?? {},
-            }], {
-                ...layoutDefaults,
-                title: undefined,
-            }, {
-                responsive: true,
-                displayModeBar: true,
-                displaylogo: false,
-            });
-        }
-    });
+        scheduleRender();
+    })();
 </script>
 

@@ -43,6 +43,8 @@ class SegmentTransitionComparison extends Page
 
     public array $sankeyData = [];
 
+    public array $periodPresets = [];
+
     public ?string $message = null;
 
     public function mount(): void
@@ -50,6 +52,7 @@ class SegmentTransitionComparison extends Page
         $this->baselineDate = now()->subYear()->toDateString();
         $this->comparisonDate = now()->toDateString();
         $this->sankeyData = $this->emptySankeyPayload();
+        $this->periodPresets = $this->buildPeriodPresets();
 
         $this->generateComparison();
     }
@@ -63,6 +66,10 @@ class SegmentTransitionComparison extends Page
                 ->description('Select two anchor dates. Each snapshot uses your configured '.$settings->getRfmTimeframeDays().'-day timeframe.')
                 ->icon(Heroicon::CalendarDays)
                 ->schema([
+                    \Filament\Schemas\Components\View::make('filament.pages.partials.period-presets')
+                        ->viewData([
+                            'presets' => $this->periodPresets,
+                        ]),
                     Form::make()->schema([
                         DatePicker::make('baselineDate')
                             ->label('Baseline date')
@@ -83,19 +90,14 @@ class SegmentTransitionComparison extends Page
                         ->color('primary')
                         ->action(fn () => $this->generateComparison()),
                 ]),
-            Section::make('Results & Insights')
-                ->description('RFM summaries, deltas, and flow visualizations')
-                ->icon(Heroicon::ChartBarSquare)
-                ->schema([
-                    \Filament\Schemas\Components\View::make('filament.pages.segment-transition-comparison')
-                        ->viewData(fn () => [
-                            'snapshotA' => $this->snapshotA,
-                            'snapshotB' => $this->snapshotB,
-                            'changes' => $this->changes,
-                            'transitionMatrix' => $this->transitionMatrix,
-                            'sankeyData' => $this->sankeyData,
-                            'message' => $this->message,
-                        ]),
+            \Filament\Schemas\Components\View::make('filament.pages.segment-transition-comparison')
+                ->viewData(fn () => [
+                    'snapshotA' => $this->snapshotA,
+                    'snapshotB' => $this->snapshotB,
+                    'changes' => $this->changes,
+                    'transitionMatrix' => $this->transitionMatrix,
+                    'sankeyData' => $this->sankeyData,
+                    'message' => $this->message,
                 ]),
         ]);
     }
@@ -104,6 +106,7 @@ class SegmentTransitionComparison extends Page
     {
         if (! $this->baselineDate || ! $this->comparisonDate) {
             $this->message = 'Select both baseline and comparison dates.';
+            $this->dispatch('segment-comparison-refreshed');
 
             return;
         }
@@ -113,6 +116,7 @@ class SegmentTransitionComparison extends Page
 
         if ($baseline->gte($comparison)) {
             $this->message = 'Baseline date must be earlier than the comparison date.';
+            $this->dispatch('segment-comparison-refreshed');
 
             return;
         }
@@ -132,6 +136,8 @@ class SegmentTransitionComparison extends Page
             $this->sankeyData = $this->emptySankeyPayload();
             $this->changes = [];
 
+            $this->dispatch('segment-comparison-refreshed');
+
             return;
         }
 
@@ -141,6 +147,21 @@ class SegmentTransitionComparison extends Page
         $matrix = $service->buildTransitionsMatrixForAsOfDates($baseline, $comparison);
         $this->transitionMatrix = $matrix;
         $this->sankeyData = $this->buildSankeyPayload($matrix, $service->getSegmentDefinitions());
+        $this->dispatch('segment-comparison-refreshed');
+    }
+
+    public function applyPreset(string $key): void
+    {
+        $preset = collect($this->periodPresets)->firstWhere('key', $key);
+
+        if (! $preset) {
+            return;
+        }
+
+        $this->comparisonDate = now()->toDateString();
+        $this->baselineDate = now()->subDays($preset['days'])->toDateString();
+
+        $this->generateComparison();
     }
 
     protected function calculateChangeInsights(array $baseline, array $comparison): array
@@ -283,6 +304,39 @@ class SegmentTransitionComparison extends Page
         }
 
         return $insights;
+    }
+
+    protected function buildPeriodPresets(): array
+    {
+        $settings = app(RfmSettingsContract::class);
+        $timeframe = $settings->getRfmTimeframeDays();
+
+        return [
+            [
+                'key' => 'saved_timeframe',
+                'label' => "Saved timeframe ({$timeframe} days)",
+                'description' => 'Uses your configured RFM window against today.',
+                'days' => $timeframe,
+            ],
+            [
+                'key' => 'last_quarter',
+                'label' => 'Last 90 days',
+                'description' => 'Quick quarter-over-quarter comparison.',
+                'days' => 90,
+            ],
+            [
+                'key' => 'half_year',
+                'label' => 'Last 180 days',
+                'description' => 'Highlights half-year momentum shifts.',
+                'days' => 180,
+            ],
+            [
+                'key' => 'full_year',
+                'label' => 'Last 365 days',
+                'description' => 'Year-over-year performance view.',
+                'days' => 365,
+            ],
+        ];
     }
 
     protected function buildSankeyPayload(array $matrixPayload, array $definitions): array
