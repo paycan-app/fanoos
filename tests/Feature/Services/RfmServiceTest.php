@@ -83,3 +83,28 @@ it('summarizes segment stats with totals and high value share', function (): voi
         ->and($summary['high_value_share'])->toBeLessThanOrEqual(100)
         ->and($summary['top_segments'])->not->toBeEmpty();
 });
+
+it('builds segment snapshots for specific comparison dates', function (): void {
+    $customerA = Customer::factory()->create();
+    $customerB = Customer::factory()->create();
+
+    Order::factory()->create([
+        'customer_id' => $customerA->id,
+        'created_at' => now()->subDays(20),
+        'total_amount' => 450,
+    ]);
+
+    Order::factory()->create([
+        'customer_id' => $customerB->id,
+        'created_at' => now()->subDays(50),
+        'total_amount' => 275,
+    ]);
+
+    $service = makeRfmService(['rfm_timeframe_days' => 120]);
+    $snapshot = $service->buildSegmentSnapshotForAsOfDate(now());
+
+    expect($snapshot['as_of'])->toBe(now()->toDateString())
+        ->and($snapshot['total_customers'])->toBe(2)
+        ->and($snapshot['segments'])->not->toBeEmpty()
+        ->and($snapshot['metrics']['total_monetary'])->toBeGreaterThan(0);
+});

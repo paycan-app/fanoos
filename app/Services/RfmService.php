@@ -698,6 +698,117 @@ class RfmService
         return $this->buildTransitionsMatrixForIntervals($baselineStart, $baselineEnd, $comparisonStart, $comparisonEnd);
     }
 
+    public function buildSegmentSnapshotForAsOfDate(string|Carbon $asOfDate): array
+    {
+        $asOf = $asOfDate instanceof Carbon ? $asOfDate->copy()->endOfDay() : Carbon::parse($asOfDate)->endOfDay();
+        $timeframe = $this->determineTimeframeDays();
+
+        $start = $asOf->copy()->subDays($timeframe)->startOfDay();
+        $map = $this->classifySegmentsMapForInterval($start, $asOf, save: false);
+
+        $totalCustomers = count($map);
+
+        if ($totalCustomers === 0) {
+            return [
+                'as_of' => $asOf->toDateString(),
+                'timeframe_days' => $timeframe,
+                'total_customers' => 0,
+                'active_customers' => 0,
+                'currency' => $this->currencyCode,
+                'metrics' => [
+                    'avg_recency' => null,
+                    'avg_frequency' => 0.0,
+                    'avg_monetary' => 0.0,
+                    'total_frequency' => 0,
+                    'total_monetary' => 0.0,
+                    'total_monetary_formatted' => $this->formatCurrency(0.0),
+                ],
+                'segments' => [],
+            ];
+        }
+
+        $segments = [];
+        $totalFrequency = 0;
+        $totalMonetary = 0.0;
+        $totalRecency = 0;
+        $recencyObservations = 0;
+        $activeCustomers = 0;
+
+        foreach ($map as $row) {
+            $segmentName = $row['segment'];
+
+            if (! isset($segments[$segmentName])) {
+                $segments[$segmentName] = [
+                    'segment' => $segmentName,
+                    'customers' => 0,
+                    'total_monetary' => 0.0,
+                    'total_frequency' => 0,
+                    'total_recency' => 0,
+                    'recency_observations' => 0,
+                ];
+            }
+
+            $segments[$segmentName]['customers']++;
+            $segments[$segmentName]['total_monetary'] += (float) ($row['m'] ?? 0.0);
+            $segments[$segmentName]['total_frequency'] += (int) ($row['f'] ?? 0);
+
+            if ($row['r'] !== null) {
+                $segments[$segmentName]['total_recency'] += (int) $row['r'];
+                $segments[$segmentName]['recency_observations']++;
+                $totalRecency += (int) $row['r'];
+                $recencyObservations++;
+            }
+
+            if (($row['f'] ?? 0) > 0 || ($row['m'] ?? 0.0) > 0.0) {
+                $activeCustomers++;
+            }
+
+            $totalFrequency += (int) ($row['f'] ?? 0);
+            $totalMonetary += (float) ($row['m'] ?? 0.0);
+        }
+
+        $distribution = array_map(
+            function (array $segment) use ($totalCustomers): array {
+                $customers = max(1, $segment['customers']);
+
+                return [
+                    'segment' => $segment['segment'],
+                    'customers' => $segment['customers'],
+                    'share' => round(($segment['customers'] / $totalCustomers) * 100, 2),
+                    'avg_monetary' => round($segment['total_monetary'] / $customers, 2),
+                    'avg_frequency' => round($segment['total_frequency'] / $customers, 2),
+                    'avg_recency' => $segment['recency_observations'] > 0
+                        ? round($segment['total_recency'] / $segment['recency_observations'], 1)
+                        : null,
+                ];
+            },
+            $segments
+        );
+
+        usort($distribution, fn ($a, $b) => $b['customers'] <=> $a['customers']);
+
+        $avgRecency = $recencyObservations > 0
+            ? round($totalRecency / $recencyObservations, 1)
+            : null;
+
+        return [
+            'as_of' => $asOf->toDateString(),
+            'timeframe_days' => $timeframe,
+            'total_customers' => $totalCustomers,
+            'active_customers' => $activeCustomers,
+            'currency' => $this->currencyCode,
+            'metrics' => [
+                'avg_recency' => $avgRecency,
+                'avg_frequency' => round($totalFrequency / max(1, $totalCustomers), 2),
+                'avg_monetary' => round($totalMonetary / max(1, $totalCustomers), 2),
+                'total_frequency' => $totalFrequency,
+                'total_monetary' => round($totalMonetary, 2),
+                'total_monetary_formatted' => $this->formatCurrency($totalMonetary),
+            ],
+            'segments' => array_values($distribution),
+        ];
+    }
+
     /**
      * Get segment definitions with business context for tooltips
      */
