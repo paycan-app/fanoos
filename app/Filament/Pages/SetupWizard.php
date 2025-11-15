@@ -61,6 +61,12 @@ class SetupWizard extends Page
 
     public ?string $previousAnalysisDate = null;
 
+    public bool $calculationInProgress = false;
+
+    public bool $calculationComplete = false;
+
+    public ?string $calculationError = null;
+
     public function mount(): void
     {
         $settings = app(GeneralSettings::class);
@@ -163,89 +169,50 @@ class SetupWizard extends Page
                             ]),
                     ]),
 
-                    Step::make('RFM Settings')->schema([
-                        Section::make('RFM Settings')
-                            ->description('Choose timeframe, segments, bins, and analysis date.')
-                            ->icon(Heroicon::Cog)
-                            ->schema([
-                                \Filament\Schemas\Components\Form::make()->schema([
-                                    Grid::make(2)->schema([
-                                        Select::make('rfm.rfm_timeframe_days')
-                                            ->label('Analysis Timeframe')
-                                            ->options([
-                                                7 => '7 Days',
-                                                15 => '15 Days',
-                                                30 => '30 Days',
-                                                45 => '45 Days',
-                                                90 => '90 Days (Quarter)',
-                                                180 => '6 Months',
-                                                365 => '1 Year',
-                                                730 => '2 Years',
-                                                1825 => '5 Years',
-                                            ])
-                                            ->required(),
-
-                                        ToggleButtons::make('rfm.rfm_segments')
-                                            ->label('Segmentation Level')
-                                            ->options([
-                                                3 => '3 — Simple',
-                                                5 => '5 — Recommended',
-                                                11 => '11 — Advanced',
-                                            ])
-                                            ->required(),
-                                    ]),
-
-                                    Grid::make(2)->schema([
-                                        TextInput::make('rfm.rfm_bins')
-                                            ->label('RFM Score Bins')
-                                            ->helperText('Number of quantile bins for scoring (2–9).')
-                                            ->numeric()
-                                            ->minValue(2)
-                                            ->maxValue(9)
-                                            ->default(5)
-                                            ->required()
-                                            ->suffix('bins'),
-
-                                        DatePicker::make('rfm.analysis_date')
-                                            ->label('Analysis Date')
-                                            ->default(now())
-                                            ->maxDate(now())
-                                            ->native(false)
-                                            ->displayFormat('Y-m-d')
-                                            ->required(),
-                                    ]),
-                                ]),
-                            ]),
-
-                        \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-advanced-settings-toggle'),
-
-                        Section::make('Advanced RFM Settings')
-                            ->description('Enable segmentation, choose segments, bins, and an analysis date.')
-                            ->icon(Heroicon::Cog)
-                            ->hidden(fn () => ! $this->showAdvanced)
-                            ->schema([
-                                \Filament\Schemas\Components\Form::make()->schema([
-                                    Grid::make(1)->schema([
+                    Step::make('RFM Settings')
+                        ->schema([
+                            Section::make('RFM Settings')
+                                ->description('Choose timeframe, segments, bins, and analysis date.')
+                                ->icon(Heroicon::Cog)
+                                ->schema([
+                                    \Filament\Schemas\Components\Form::make()->schema([
                                         Grid::make(2)->schema([
-                                            \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
-                                                ->viewData(fn () => [
-                                                    'modelPath' => 'rfm.rfm_segments',
-                                                    'options' => [
-                                                        3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
-                                                        5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, At Risk, Needs Attention'],
-                                                        11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
-                                                    ],
-                                                ]),
+                                            Select::make('rfm.rfm_timeframe_days')
+                                                ->label('Analysis Timeframe')
+                                                ->options([
+                                                    7 => '7 Days',
+                                                    15 => '15 Days',
+                                                    30 => '30 Days',
+                                                    45 => '45 Days',
+                                                    90 => '90 Days (Quarter)',
+                                                    180 => '6 Months',
+                                                    365 => '1 Year',
+                                                    730 => '2 Years',
+                                                    1825 => '5 Years',
+                                                ])
+                                                ->required(),
+
+                                            ToggleButtons::make('rfm.rfm_segments')
+                                                ->label('Segmentation Level')
+                                                ->options([
+                                                    3 => '3 — Simple',
+                                                    5 => '5 — Recommended',
+                                                    11 => '11 — Advanced',
+                                                ])
+                                                ->required(),
+                                        ]),
+
+                                        Grid::make(2)->schema([
                                             TextInput::make('rfm.rfm_bins')
                                                 ->label('RFM Score Bins')
+                                                ->helperText('Number of quantile bins for scoring (2–9).')
                                                 ->numeric()
                                                 ->minValue(2)
                                                 ->maxValue(9)
                                                 ->default(5)
                                                 ->required()
                                                 ->suffix('bins'),
-                                        ]),
-                                        Grid::make(1)->schema([
+
                                             DatePicker::make('rfm.analysis_date')
                                                 ->label('Analysis Date')
                                                 ->default(now())
@@ -256,14 +223,54 @@ class SetupWizard extends Page
                                         ]),
                                     ]),
                                 ]),
-                            ]),
-                    ]),
 
-                    Step::make('Apply Settings')
-                        ->description('Save your configuration before calculating customer segments.')
-                        ->icon(Heroicon::CheckCircle)
+                            \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-advanced-settings-toggle'),
+
+                            Section::make('Advanced RFM Settings')
+                                ->description('Enable segmentation, choose segments, bins, and an analysis date.')
+                                ->icon(Heroicon::Cog)
+                                ->hidden(fn () => ! $this->showAdvanced)
+                                ->schema([
+                                    \Filament\Schemas\Components\Form::make()->schema([
+                                        Grid::make(1)->schema([
+                                            Grid::make(2)->schema([
+                                                \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
+                                                    ->viewData(fn () => [
+                                                        'modelPath' => 'rfm.rfm_segments',
+                                                        'options' => [
+                                                            3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
+                                                            5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, At Risk, Needs Attention'],
+                                                            11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
+                                                        ],
+                                                    ]),
+                                                TextInput::make('rfm.rfm_bins')
+                                                    ->label('RFM Score Bins')
+                                                    ->numeric()
+                                                    ->minValue(2)
+                                                    ->maxValue(9)
+                                                    ->default(5)
+                                                    ->required()
+                                                    ->suffix('bins'),
+                                            ]),
+                                            Grid::make(1)->schema([
+                                                DatePicker::make('rfm.analysis_date')
+                                                    ->label('Analysis Date')
+                                                    ->default(now())
+                                                    ->maxDate(now())
+                                                    ->native(false)
+                                                    ->displayFormat('Y-m-d')
+                                                    ->required(),
+                                            ]),
+                                        ]),
+                                    ]),
+                                ]),
+                        ]),
+
+                    Step::make('Calculate & Review')
+                        ->description('RFM analysis results and segment visualization.')
+                        ->icon(Heroicon::ChartBar)
                         ->schema([
-                            \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-save-settings'),
+                            \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-step-3-results'),
                         ]),
                 ]),
         ]);
@@ -307,6 +314,28 @@ class SetupWizard extends Page
             ->title('RFM settings saved.')
             ->success()
             ->send();
+    }
+
+    public function startCalculation(): void
+    {
+        // Reset state
+        $this->calculationInProgress = true;
+        $this->calculationComplete = false;
+        $this->calculationError = null;
+
+        try {
+            $this->calculateSegments();
+            $this->calculationComplete = true;
+        } catch (\Exception $e) {
+            $this->calculationError = $e->getMessage();
+            Notification::make()
+                ->title('Calculation failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        } finally {
+            $this->calculationInProgress = false;
+        }
     }
 
     public function calculateSegments(): void
