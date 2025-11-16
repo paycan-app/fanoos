@@ -5,7 +5,7 @@
         @foreach($options as $value => $opt)
             <button
                 type="button"
-                class="rounded-lg border px-4 py-3 text-left transition {{ (int) $current === (int) $value ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' }}"
+                class="rounded-lg border px-4 py-3 text-left transition {{ (int) $current === (int) $value ? 'border-primary-500 bg-primary-100 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' }}"
                 wire:click="$set('{{ $modelPath }}', {{ (int) $value }})"
             >
                 <div class="flex items-center justify-between">
@@ -17,6 +17,8 @@
                     </div>
                     <x-filament::icon
                         icon="heroicon-o-check-circle"
+                        width="16"
+                        height="16"
                         class="h-5 w-5 {{ (int) $current === (int) $value ? 'text-primary-600' : 'text-transparent' }}"
                     />
                 </div>

@@ -11,7 +11,7 @@ use App\Settings\GeneralSettings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
@@ -27,8 +27,8 @@ class ManageGeneralSettings extends SettingsPage
 
     protected static UnitEnum|string|null $navigationGroup = 'Settings';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
-    protected static ?string $navigationLabel = 'General';
-    protected static ?string $title = 'General Settings';
+    protected static ?string $navigationLabel = 'Settings';
+    protected static ?string $title = 'Settings';
 
     public function form(Schema $schema): Schema
     {
@@ -45,21 +45,35 @@ class ManageGeneralSettings extends SettingsPage
                         ->email()
                         ->required(),
 
-                    Toggle::make('maintenance_mode')
-                        ->label('Maintenance Mode'),
+                    Textarea::make('about_business')
+                        ->label('About Business')
+                        ->rows(3)
+                        ->maxLength(500),
                 ]),
 
             Section::make('RFM Settings')
                 ->description('Configure global defaults for RFM analysis.')
                 ->schema([
-                    ToggleButtons::make('rfm_segments')
-                        ->label('Segmentation Level')
-                        ->options([
-                            3 => '3 — Simple',
-                            5 => '5 — Recommended',
-                            11 => '11 — Advanced',
-                        ])
-                        ->required(),
+                    \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
+                    ->viewData(fn () => [
+                        'modelPath' => 'data.rfm_segments',
+                        'options' => [
+                            3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
+                            5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, etc.'],
+                            11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
+                        ],
+                    ]),
+                    
+                    // Helpful for future
+                    // ToggleButtons::make('rfm_segments22')
+                    //     ->label('Segmentation Level')
+                    //     ->options([
+                    //         3 => '3 — Simple',
+                    //         5 => '5 — Recommended',
+                    //         11 => '11 — Advanced',
+                    //     ])
+                    //     ->inline()
+                    //     ->required(),
 
                     Select::make('rfm_timeframe_days')
                         ->label('Analysis Timeframe')

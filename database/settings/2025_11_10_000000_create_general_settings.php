@@ -7,6 +7,6 @@ return new class extends SettingsMigration {
     {
         $this->migrator->add('general.site_name', config('app.name'));
         $this->migrator->add('general.contact_email', 'admin@example.com');
-        $this->migrator->add('general.maintenance_mode', false);
+        $this->migrator->add('general.about_business', '');
     }
 };

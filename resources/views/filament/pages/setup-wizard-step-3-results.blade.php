@@ -94,7 +94,7 @@
                 {{-- View Results Button --}}
                 <div class="pt-4">
                     <a
-                        href="{{ route('filament.admin.pages.rfm-dashboard') }}"
+                        href="{{ route('filament.panel.pages.rfm-dashboard') }}"
                         class="inline-flex items-center gap-2 px-6 py-3 bg-success-600 hover:bg-success-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

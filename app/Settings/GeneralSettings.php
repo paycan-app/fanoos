@@ -10,6 +10,8 @@ class GeneralSettings extends Settings implements RfmSettingsContract
 
     public string $contact_email;
 
+    public ?string $about_business = null;
+
     public bool $maintenance_mode;
 
     // Removed: public bool $rfm_enable;
