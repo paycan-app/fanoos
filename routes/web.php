@@ -15,3 +15,8 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 require __DIR__.'/settings.php';
+
+use App\Http\Controllers\CrossSellController;
+
+Route::get('/cross-sell', [CrossSellController::class, 'show']);
+
