@@ -30,7 +30,9 @@ class SetupWizard extends Page
 
     protected static ?string $title = 'Setup Wizard';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Setup';
+    protected static UnitEnum|string|null $navigationGroup = 'Settings';
+
+    protected static ?int $navigationSort = 1000;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrench;
 

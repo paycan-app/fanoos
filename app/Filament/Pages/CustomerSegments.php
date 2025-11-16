@@ -9,17 +9,17 @@ use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class RfmDashboard extends Page
+class CustomerSegments extends Page
 {
-    protected static ?string $navigationLabel = 'RFM Dashboard';
+    protected static ?string $navigationLabel = 'Customer Segments';
 
-    protected static ?string $title = 'RFM Customer Segmentation Dashboard';
+    protected static ?string $title = 'RFM Customer Segmentation';
 
     protected static UnitEnum|string|null $navigationGroup = 'Analytics';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ChartBar;
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = -10;
 
     protected string $view = 'filament.pages.rfm-dashboard';
 

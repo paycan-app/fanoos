@@ -21,7 +21,7 @@ class SegmentTransitionComparison extends Page
 
     protected static ?string $title = 'Segment Transition Comparison';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Customers';
+    protected static UnitEnum|string|null $navigationGroup = 'Analytics';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 

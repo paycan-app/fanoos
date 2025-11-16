@@ -29,6 +29,7 @@ class ManageGeneralSettings extends SettingsPage
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
     protected static ?string $navigationLabel = 'Settings';
     protected static ?string $title = 'Settings';
+    protected static ?int $navigationSort = 999;
 
     public function form(Schema $schema): Schema
     {
@@ -47,7 +48,7 @@ class ManageGeneralSettings extends SettingsPage
 
                     Textarea::make('about_business')
                         ->label('About Business')
-                        ->rows(3)
+                        ->rows(4)
                         ->maxLength(500),
                 ]),
 
@@ -92,7 +93,7 @@ class ManageGeneralSettings extends SettingsPage
 
                     TextInput::make('rfm_bins')
                         ->label('RFM Score Bins')
-                        ->helperText('Number of quantile bins for scoring (2–9).')
+                        //->helperText('Number of quantile bins for scoring (2–9).')
                         ->numeric()
                         ->minValue(2)
                         ->maxValue(9)
