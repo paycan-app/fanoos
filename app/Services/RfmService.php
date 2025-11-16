@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Order;
 use App\Settings\RfmSettingsContract;
 use Carbon\Carbon;
 
@@ -16,48 +17,23 @@ class RfmService
         $this->currencyCode = config('app.currency', 'USD');
     }
 
-    public function calculateSegments(?int $timeframeDays = null, ?Carbon $asOfDate = null): array
+    public function calculateSegments(?int $timeframeDays = null, ?Carbon $asOfDate = null, bool $save = true): array
     {
         // Removed: if (! $this->settings->rfm_enable) { return ['message' => 'RFM is disabled in settings.']; }
 
-        $bins = $this->determineBinCount();
-        $segments = $this->determineSegmentCount();
         $timeframe = $this->determineTimeframeDays($timeframeDays);
         $analysisDate = $asOfDate ?? now();
 
-        $customers = Customer::query()->with('orders')->get();
+        $map = $this->classifySegmentsMap($timeframe, save: $save, asOfDate: $analysisDate);
 
-        if ($customers->isEmpty()) {
+        if (empty($map)) {
             return [
                 'message' => 'No customers available for RFM analysis yet.',
             ];
         }
 
-        $recencies = [];
-        $frequencies = [];
-        $monetaries = [];
-
-        $customerMetrics = [];
-        foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
-            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
-            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
-
-            $customerMetrics[$c->id] = [
-                'recency' => $r,
-                'frequency' => $f,
-                'monetary' => $m,
-            ];
-
-            if ($r !== null) {
-                $recencies[] = $r;
-            }
-            $frequencies[] = $f;
-            $monetaries[] = $m;
-        }
-
-        $totalFrequency = array_sum($frequencies);
-        $totalMonetary = array_sum($monetaries);
+        $totalFrequency = array_sum(array_map(fn ($row) => (int) ($row['f'] ?? 0), $map));
+        $totalMonetary = array_sum(array_map(fn ($row) => (float) ($row['m'] ?? 0.0), $map));
 
         if ($totalFrequency === 0 && (float) $totalMonetary === 0.0) {
             return [
@@ -65,26 +41,10 @@ class RfmService
             ];
         }
 
-        $rBreaks = $this->quantileBreaks($recencies, $bins);
-        $fBreaks = $this->quantileBreaks($frequencies, $bins);
-        $mBreaks = $this->quantileBreaks($monetaries, $bins);
-
         $stats = [];
 
-        foreach ($customers as $c) {
-            $metrics = $customerMetrics[$c->id];
-            $r = $metrics['recency'];
-            $f = $metrics['frequency'];
-            $m = $metrics['monetary'];
-
-            $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
-            $fScore = $this->scoreValue($f, $fBreaks, $bins);
-            $mScore = $this->scoreValue($m, $mBreaks, $bins);
-
-            $segment = $this->assignSegment($rScore, $fScore, $mScore, $r, $f, $m, $segments);
-
-            $c->segment = $segment;
-            $c->save();
+        foreach ($map as $row) {
+            $segment = $row['segment'];
 
             if (! isset($stats[$segment])) {
                 $stats[$segment] = [
@@ -100,9 +60,9 @@ class RfmService
             }
 
             $stats[$segment]['customers']++;
-            $stats[$segment]['sum_monetary'] += (float) $m;
-            $stats[$segment]['sum_frequency'] += (int) $f;
-            $stats[$segment]['sum_recency'] += (int) ($r ?? 0);
+            $stats[$segment]['sum_monetary'] += (float) ($row['m'] ?? 0.0);
+            $stats[$segment]['sum_frequency'] += (int) ($row['f'] ?? 0);
+            $stats[$segment]['sum_recency'] += (int) (($row['r'] ?? null) ?? 0);
         }
 
         foreach ($stats as &$row) {
@@ -394,11 +354,12 @@ class RfmService
         $timeframe = $this->determineTimeframeDays($timeframeDays);
         $analysisDate = $asOfDate ?? now();
 
-        $customers = Customer::query()->with('orders')->get();
+        $customers = $this->collectCustomersForAnalysis();
 
         $recencies = [];
         $frequencies = [];
         $monetaries = [];
+        $metrics = [];
 
         foreach ($customers as $c) {
             $r = $this->calculateRecency($c, $timeframe, $analysisDate);
@@ -410,6 +371,8 @@ class RfmService
             }
             $frequencies[] = $f;
             $monetaries[] = $m;
+
+            $metrics[$c->id] = ['r' => $r, 'f' => $f, 'm' => $m];
         }
 
         $rBreaks = $this->quantileBreaks($recencies, $bins);
@@ -419,26 +382,23 @@ class RfmService
         $map = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecency($c, $timeframe, $analysisDate);
-            $f = $this->calculateFrequency($c, $timeframe, $analysisDate);
-            $m = $this->calculateMonetary($c, $timeframe, $analysisDate);
+            $vals = $metrics[$c->id];
+            $rScore = $this->scoreValue($vals['r'], $rBreaks, $bins, invert: true);
+            $fScore = $this->scoreValue($vals['f'], $fBreaks, $bins);
+            $mScore = $this->scoreValue($vals['m'], $mBreaks, $bins);
 
-            $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
-            $fScore = $this->scoreValue($f, $fBreaks, $bins);
-            $mScore = $this->scoreValue($m, $mBreaks, $bins);
+            $segment = $this->assignSegment($rScore, $fScore, $mScore, $vals['r'], $vals['f'], $vals['m'], $segmentCount);
 
-            $segment = $this->assignSegment($rScore, $fScore, $mScore, $r, $f, $m, $segmentCount);
-
-            if ($save) {
+            if ($save && $c->exists) {
                 $c->segment = $segment;
                 $c->save();
             }
 
             $map[$c->id] = [
                 'segment' => $segment,
-                'r' => $r,
-                'f' => $f,
-                'm' => $m,
+                'r' => $vals['r'],
+                'f' => $vals['f'],
+                'm' => $vals['m'],
                 'rScore' => $rScore,
                 'fScore' => $fScore,
                 'mScore' => $mScore,
@@ -584,11 +544,12 @@ class RfmService
         $bins = $this->determineBinCount();
         $segmentCount = $this->determineSegmentCount();
 
-        $customers = Customer::query()->with('orders')->get();
+        $customers = $this->collectCustomersForAnalysis();
 
         $recencies = [];
         $frequencies = [];
         $monetaries = [];
+        $metrics = [];
 
         foreach ($customers as $c) {
             $r = $this->calculateRecencyForInterval($c, $start, $end);
@@ -600,6 +561,8 @@ class RfmService
             }
             $frequencies[] = $f;
             $monetaries[] = $m;
+
+            $metrics[$c->id] = ['r' => $r, 'f' => $f, 'm' => $m];
         }
 
         $rBreaks = $this->quantileBreaks($recencies, $bins);
@@ -609,26 +572,23 @@ class RfmService
         $map = [];
 
         foreach ($customers as $c) {
-            $r = $this->calculateRecencyForInterval($c, $start, $end);
-            $f = $this->calculateFrequencyForInterval($c, $start, $end);
-            $m = $this->calculateMonetaryForInterval($c, $start, $end);
+            $vals = $metrics[$c->id];
+            $rScore = $this->scoreValue($vals['r'], $rBreaks, $bins, invert: true);
+            $fScore = $this->scoreValue($vals['f'], $fBreaks, $bins);
+            $mScore = $this->scoreValue($vals['m'], $mBreaks, $bins);
 
-            $rScore = $this->scoreValue($r, $rBreaks, $bins, invert: true);
-            $fScore = $this->scoreValue($f, $fBreaks, $bins);
-            $mScore = $this->scoreValue($m, $mBreaks, $bins);
+            $segment = $this->assignSegment($rScore, $fScore, $mScore, $vals['r'], $vals['f'], $vals['m'], $segmentCount);
 
-            $segment = $this->assignSegment($rScore, $fScore, $mScore, $r, $f, $m, $segmentCount);
-
-            if ($save) {
+            if ($save && $c->exists) {
                 $c->segment = $segment;
                 $c->save();
             }
 
             $map[$c->id] = [
                 'segment' => $segment,
-                'r' => $r,
-                'f' => $f,
-                'm' => $m,
+                'r' => $vals['r'],
+                'f' => $vals['f'],
+                'm' => $vals['m'],
                 'rScore' => $rScore,
                 'fScore' => $fScore,
                 'mScore' => $mScore,
@@ -1151,6 +1111,22 @@ class RfmService
                 'calculation' => 'Count of segments with at least one customer',
             ],
         ];
+    }
+
+    protected function collectCustomersForAnalysis()
+    {
+        $customers = Customer::query()->with('orders')->get();
+
+        if ($customers->isEmpty()) {
+            $customerIds = Order::query()
+                ->whereNotNull('customer_id')
+                ->distinct()
+                ->pluck('customer_id');
+
+            return collect($customerIds)->map(fn ($id) => new Customer(['id' => $id]));
+        }
+
+        return $customers;
     }
 
     protected function determineBinCount(): int
