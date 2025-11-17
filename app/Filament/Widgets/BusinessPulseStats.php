@@ -50,6 +50,12 @@ class BusinessPulseStats extends StatsOverviewWidget
                 icon: Heroicon::ReceiptPercent,
             ),
             $this->makeStat(
+                label: 'Total Customers',
+                current: $current['total_customers'],
+                previous: $previous['total_customers'] ?? null,
+                icon: Heroicon::UserGroup,
+            ),
+            $this->makeStat(
                 label: 'Active Customers',
                 current: $current['customers'],
                 previous: $previous['customers'] ?? null,
@@ -181,15 +187,24 @@ class BusinessPulseStats extends StatsOverviewWidget
     protected function statStyling(string $label): array
     {
         return match ($label) {
-            'Total Revenue' => ['primary', 'bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/20'],
-            'Total Orders' => ['info', 'bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-lg shadow-sky-500/20'],
-            'Active Customers' => ['success', 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20'],
-            'Average Order Value' => ['warning', 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20'],
-            'New Customers' => ['success', 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/20'],
-            'New Orders' => ['primary', 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/20'],
-            'Avg. Items / Order' => ['gray', 'bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/20'],
+            'Total Revenue' => ['primary', 'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-500 dark:to-amber-600 dark:text-gray-300 dark:shadow-lg dark:shadow-amber-500/20'],
+            'Total Orders' => ['info', 'bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-500 dark:to-sky-600 dark:text-gray-300 dark:shadow-lg dark:shadow-sky-500/20'],
+            'Total Customers' => ['gray', 'bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-500 dark:to-violet-600 dark:text-gray-300 dark:shadow-lg dark:shadow-violet-500/20'],
+            'Active Customers' => ['success', 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-500 dark:to-emerald-600 dark:text-gray-300 dark:shadow-lg dark:shadow-emerald-500/20'],
+            'Average Order Value' => ['warning', 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-500 dark:to-orange-600 dark:text-gray-300 dark:shadow-lg dark:shadow-orange-500/20'],
+            'New Customers' => ['success', 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-500 dark:to-green-600 dark:text-gray-300 dark:shadow-lg dark:shadow-green-500/20'],
+            'New Orders' => ['primary', 'bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-500 dark:to-indigo-600 dark:text-gray-300 dark:shadow-lg dark:shadow-indigo-500/20'],
+            'Avg. Items / Order' => ['gray', 'bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-500 dark:to-slate-600 dark:text-gray-300 dark:shadow-lg dark:shadow-slate-500/20'],
             default => [null, null],
         };
+    }
+
+    protected function getColumns(): int|array
+    {
+        return [
+            '@lg' => 4,
+            '!@lg' => 2,
+        ];
     }
 
     protected function getCurrencyCode(): string

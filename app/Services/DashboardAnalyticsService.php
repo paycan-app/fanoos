@@ -20,6 +20,7 @@ class DashboardAnalyticsService
      *     revenue: float,
      *     orders: int,
      *     customers: int,
+     *     total_customers: int,
      *     avg_order_value: float,
      *     new_customers: int,
      *     new_orders: int,
@@ -83,6 +84,10 @@ class DashboardAnalyticsService
         $totalRevenue = (float) (clone $ordersQuery)->sum('total_amount');
         $activeCustomers = (clone $ordersQuery)->distinct('customer_id')->count('customer_id');
 
+        $totalCustomers = Customer::query()
+            ->where('created_at', '<=', $range['end'])
+            ->count();
+
         $newCustomers = Customer::query()
             ->whereBetween('created_at', [$range['start'], $range['end']])
             ->count();
@@ -108,6 +113,7 @@ class DashboardAnalyticsService
             'revenue' => round($totalRevenue, 2),
             'orders' => $totalOrders,
             'customers' => $activeCustomers,
+            'total_customers' => $totalCustomers,
             'avg_order_value' => $avgOrderValue,
             'new_customers' => $newCustomers,
             'new_orders' => $newOrders,

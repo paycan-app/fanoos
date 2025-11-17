@@ -65,10 +65,10 @@
             <div class="fi-section bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Revenue</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">${{ number_format($totalRevenue, 0) }}</p>
                         @if($revenueTrend != 0)
-                        <p class="text-xs mt-1 {{ $revenueTrend > 0 ? 'text-success-600' : 'text-danger-600' }}">
+                        <p class="text-xs mt-1 {{ $revenueTrend > 0 ? 'text-success-600 dark:text-success-300' : 'text-danger-600 dark:text-danger-300' }}">
                             {{ $revenueTrend > 0 ? '↗' : '↘' }} {{ number_format(abs($revenueTrend), 1) }}%
                         </p>
                         @endif
@@ -80,10 +80,10 @@
             <div class="fi-section bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Total Customers</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ number_format($totalCustomers) }}</p>
                         @if($customerTrend != 0)
-                        <p class="text-xs mt-1 {{ $customerTrend > 0 ? 'text-success-600' : 'text-danger-600' }}">
+                        <p class="text-xs mt-1 {{ $customerTrend > 0 ? 'text-success-600 dark:text-success-300' : 'text-danger-600 dark:text-danger-300' }}">
                             {{ $customerTrend > 0 ? '↗' : '↘' }} {{ number_format(abs($customerTrend), 1) }}%
                         </p>
                         @endif
@@ -95,10 +95,10 @@
             <div class="fi-section bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Customer Value</p>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Avg Customer Value</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">${{ number_format($avgMonetary, 2) }}</p>
                         @if($avgValueTrend != 0)
-                        <p class="text-xs mt-1 {{ $avgValueTrend > 0 ? 'text-success-600' : 'text-danger-600' }}">
+                        <p class="text-xs mt-1 {{ $avgValueTrend > 0 ? 'text-success-600 dark:text-success-300' : 'text-danger-600 dark:text-danger-300' }}">
                             {{ $avgValueTrend > 0 ? '↗' : '↘' }} {{ number_format(abs($avgValueTrend), 1) }}%
                         </p>
                         @endif
@@ -110,9 +110,9 @@
             <div class="fi-section bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between">
                     <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Active Segments</p>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Active Segments</p>
                         <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{{ $activeSegments }}</p>
-                        <p class="text-xs mt-1 text-gray-500 dark:text-gray-400">segments</p>
+                        <p class="text-xs mt-1 text-gray-500 dark:text-gray-300">segments</p>
                     </div>
                     <x-filament::icon icon="heroicon-o-tag" class="h-8 w-8 text-primary-500" />
                 </div>

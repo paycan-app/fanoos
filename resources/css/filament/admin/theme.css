@@ -2,3 +2,13 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+@layer components {
+  .dark .fi-wi-stats-overview-stat-label, .fi-wi-stats-overview-stat .fi-icon:where(.dark,.dark *) {
+    color: #d1d5db !important;
+  }
+  .dark .fi-wi-stats-overview-stat-description {
+    color: #d1d5db !important;
+  }
+}
+
