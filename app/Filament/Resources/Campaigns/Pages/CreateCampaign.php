@@ -1,0 +1,343 @@
+<?php
+
+namespace App\Filament\Resources\Campaigns\Pages;
+
+use App\Filament\Resources\Campaigns\CampaignResource;
+use App\Models\Customer;
+use App\Services\CampaignService;
+use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
+use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
+
+class CreateCampaign extends CreateRecord
+{
+    use CreateRecord\Concerns\HasWizard;
+
+    protected static string $resource = CampaignResource::class;
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Wizard::make([
+                    Step::make('Basic Information')
+                        ->description('Campaign details and content')
+                        ->schema([
+                            TextInput::make('name')
+                                ->required()
+                                ->maxLength(255)
+                                ->label('Campaign Name')
+                                ->placeholder('e.g., Holiday Sale 2025'),
+
+                            Radio::make('channel')
+                                ->required()
+                                ->options([
+                                    'email' => 'Email',
+                                    'sms' => 'SMS',
+                                ])
+                                ->descriptions([
+                                    'email' => 'Send via email using Mailgun',
+                                    'sms' => 'Send via SMS using Twilio',
+                                ])
+                                ->live()
+                                ->default('email'),
+
+                            TextInput::make('subject')
+                                ->required(fn ($get) => $get('channel') === 'email')
+                                ->hidden(fn ($get) => $get('channel') !== 'email')
+                                ->maxLength(255)
+                                ->label('Email Subject')
+                                ->placeholder('e.g., Exclusive Offer Just For You!'),
+
+                            RichEditor::make('content')
+                                ->required()
+                                ->label('Message Content')
+                                ->visible(fn ($get) => $get('channel') === 'email')
+                                ->toolbarButtons([
+                                    'bold',
+                                    'italic',
+                                    'link',
+                                    'bulletList',
+                                    'orderedList',
+                                ])
+                                ->placeholder('Write your email message here. Use {{first_name}}, {{last_name}}, {{segment}}, etc.')
+                                ->helperText(new HtmlString('Available variables: <code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{email}}</code>, <code>{{segment}}</code>, <code>{{monetary}}</code>, <code>{{frequency}}</code>')),
+
+                            Textarea::make('content')
+                                ->required()
+                                ->label('SMS Message')
+                                ->visible(fn ($get) => $get('channel') === 'sms')
+                                ->rows(4)
+                                ->maxLength(160)
+                                ->placeholder('Write your SMS message here (max 160 characters)')
+                                ->helperText(fn (?string $state) => (160 - strlen($state ?? '')).' characters remaining')
+                                ->live(onBlur: true),
+                        ]),
+
+                    Step::make('Recipients')
+                        ->description('Select who receives this campaign')
+                        ->schema([
+                            Radio::make('filter_type')
+                                ->required()
+                                ->options([
+                                    'all' => 'All Customers',
+                                    'segment' => 'By RFM Segment',
+                                    'custom' => 'Custom Filters',
+                                    'individual' => 'Individual Customer',
+                                ])
+                                ->descriptions([
+                                    'all' => 'Send to every customer in the database',
+                                    'segment' => 'Target specific RFM segments',
+                                    'custom' => 'Create advanced filter combinations',
+                                    'individual' => 'Send to a specific customer',
+                                ])
+                                ->live()
+                                ->default('all'),
+
+                            CheckboxList::make('filter_config.segments')
+                                ->label('Select Segments')
+                                ->visible(fn ($get) => $get('filter_type') === 'segment')
+                                ->options(fn () => app(CampaignService::class)->getAvailableSegments())
+                                ->required(fn ($get) => $get('filter_type') === 'segment')
+                                ->columns(2)
+                                ->live(),
+
+                            Select::make('filter_config.customer_ids')
+                                ->label('Select Customer')
+                                ->visible(fn ($get) => $get('filter_type') === 'individual')
+                                ->searchable()
+                                ->getSearchResultsUsing(function (string $search) {
+                                    return Customer::query()
+                                        ->where(function ($query) use ($search) {
+                                            $query->where('first_name', 'like', "%{$search}%")
+                                                ->orWhere('last_name', 'like', "%{$search}%")
+                                                ->orWhere('email', 'like', "%{$search}%");
+                                        })
+                                        ->limit(50)
+                                        ->get()
+                                        ->mapWithKeys(fn ($customer) => [
+                                            $customer->id => $customer->first_name.' '.$customer->last_name.' ('.$customer->email.')',
+                                        ]);
+                                })
+                                ->required(fn ($get) => $get('filter_type') === 'individual'),
+
+                            Section::make('Custom Filters')
+                                ->visible(fn ($get) => $get('filter_type') === 'custom')
+                                ->schema([
+                                    CheckboxList::make('filter_config.segments')
+                                        ->label('RFM Segments')
+                                        ->options(fn () => app(CampaignService::class)->getAvailableSegments())
+                                        ->columns(2)
+                                        ->live(),
+
+                                    CheckboxList::make('filter_config.countries')
+                                        ->label('Countries')
+                                        ->options(fn () => array_combine(
+                                            app(CampaignService::class)->getAvailableCountries(),
+                                            app(CampaignService::class)->getAvailableCountries()
+                                        ))
+                                        ->columns(2)
+                                        ->searchable()
+                                        ->live(),
+
+                                    CheckboxList::make('filter_config.labels')
+                                        ->label('Customer Labels')
+                                        ->options(fn () => array_combine(
+                                            app(CampaignService::class)->getAvailableLabels(),
+                                            app(CampaignService::class)->getAvailableLabels()
+                                        ))
+                                        ->columns(2)
+                                        ->live(),
+
+                                    DateTimePicker::make('filter_config.created_after')
+                                        ->label('Customer Created After')
+                                        ->live(),
+
+                                    DateTimePicker::make('filter_config.created_before')
+                                        ->label('Customer Created Before')
+                                        ->live(),
+                                ]),
+
+                            Placeholder::make('recipient_count')
+                                ->label('Estimated Recipients')
+                                ->content(function ($get) {
+                                    $filterType = $get('filter_type');
+                                    $filterConfig = $get('filter_config') ?? [];
+
+                                    if ($filterType === 'all') {
+                                        return Customer::count().' customers';
+                                    }
+
+                                    if ($filterType === 'segment' && isset($filterConfig['segments'])) {
+                                        return Customer::whereIn('segment', $filterConfig['segments'])->count().' customers';
+                                    }
+
+                                    if ($filterType === 'individual' && isset($filterConfig['customer_ids'])) {
+                                        return '1 customer';
+                                    }
+
+                                    if ($filterType === 'custom') {
+                                        $query = Customer::query();
+
+                                        if (! empty($filterConfig['segments'])) {
+                                            $query->whereIn('segment', $filterConfig['segments']);
+                                        }
+
+                                        if (! empty($filterConfig['countries'])) {
+                                            $query->whereIn('country', $filterConfig['countries']);
+                                        }
+
+                                        if (! empty($filterConfig['labels'])) {
+                                            $query->where(function ($q) use ($filterConfig) {
+                                                foreach ($filterConfig['labels'] as $label) {
+                                                    $q->orWhereJsonContains('labels', $label);
+                                                }
+                                            });
+                                        }
+
+                                        if (isset($filterConfig['created_after'])) {
+                                            $query->where('created_at', '>=', $filterConfig['created_after']);
+                                        }
+
+                                        if (isset($filterConfig['created_before'])) {
+                                            $query->where('created_at', '<=', $filterConfig['created_before']);
+                                        }
+
+                                        return $query->count().' customers';
+                                    }
+
+                                    return '0 customers';
+                                }),
+                        ]),
+
+                    Step::make('Schedule & Send')
+                        ->description('Test and launch your campaign')
+                        ->schema([
+                            Toggle::make('schedule_later')
+                                ->label('Schedule for Later')
+                                ->live()
+                                ->default(false),
+
+                            DateTimePicker::make('scheduled_at')
+                                ->label('Schedule Date & Time')
+                                ->visible(fn ($get) => $get('schedule_later'))
+                                ->required(fn ($get) => $get('schedule_later'))
+                                ->minDate(now())
+                                ->native(false),
+
+                            Section::make('Test Message')
+                                ->description('Send a test message before launching the campaign')
+                                ->schema([
+                                    TextInput::make('test_recipient')
+                                        ->label(fn ($get) => $get('../../channel') === 'email' ? 'Test Email Address' : 'Test Phone Number')
+                                        ->placeholder(fn ($get) => $get('../../channel') === 'email' ? 'test@example.com' : '+1234567890')
+                                        ->helperText('Enter an email or phone number to receive a test message'),
+                                ])
+                                ->collapsible(),
+
+                            Hidden::make('created_by')
+                                ->default(fn () => auth()->id()),
+
+                            Placeholder::make('final_summary')
+                                ->label('Campaign Summary')
+                                ->content(function ($get) {
+                                    $channel = $get('channel');
+                                    $name = $get('name');
+                                    $filterType = $get('filter_type');
+
+                                    return new HtmlString("
+                                        <div class='space-y-2'>
+                                            <div><strong>Name:</strong> {$name}</div>
+                                            <div><strong>Channel:</strong> ".ucfirst($channel).'</div>
+                                            <div><strong>Filter:</strong> '.ucfirst(str_replace('_', ' ', $filterType)).'</div>
+                                        </div>
+                                    ');
+                                }),
+                        ]),
+                ])->columnSpanFull(),
+            ]);
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            Action::make('send_test')
+                ->label('Send Test Message')
+                ->action(function (array $data) {
+                    $testRecipient = $data['test_recipient'] ?? null;
+
+                    if (! $testRecipient) {
+                        Notification::make()
+                            ->warning()
+                            ->title('No test recipient')
+                            ->body('Please enter a test email or phone number.')
+                            ->send();
+
+                        return;
+                    }
+
+                    $tempCampaign = new \App\Models\Campaign($data);
+                    $campaignService = app(CampaignService::class);
+
+                    $success = $campaignService->sendTestMessage($tempCampaign, $testRecipient);
+
+                    if ($success) {
+                        Notification::make()
+                            ->success()
+                            ->title('Test message sent!')
+                            ->body("Check {$testRecipient} for the test message.")
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->danger()
+                            ->title('Failed to send test message')
+                            ->body('Please check your email/SMS configuration.')
+                            ->send();
+                    }
+                })
+                ->color('gray'),
+
+            ...(parent::getFormActions()),
+        ];
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['status'] = $data['schedule_later'] ?? false ? 'scheduled' : 'draft';
+        unset($data['schedule_later'], $data['test_recipient']);
+
+        return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        if (! $this->record->scheduled_at) {
+            Notification::make()
+                ->success()
+                ->title('Campaign created')
+                ->body('Campaign saved as draft. You can send it from the view page.')
+                ->send();
+        } else {
+            Notification::make()
+                ->success()
+                ->title('Campaign scheduled')
+                ->body('Campaign will be sent at '.$this->record->scheduled_at->format('M d, Y g:i A'))
+                ->send();
+        }
+    }
+}

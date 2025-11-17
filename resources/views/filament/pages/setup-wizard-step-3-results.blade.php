@@ -2,15 +2,57 @@
     calculationInProgress: @entangle('calculationInProgress'),
     calculationComplete: @entangle('calculationComplete'),
     calculationError: @entangle('calculationError')
-}" x-init="
-    if (!calculationComplete && !calculationInProgress && !calculationError) {
-        $wire.call('saveRfmSettings').then(() => {
-            $wire.call('startCalculation');
-        }).catch(error => {
-            console.error('Error during calculation:', error);
-        });
-    }
-">
+}">
+
+    {{-- No Data State --}}
+    @if(!$this->hasDataForAnalysis())
+    <div class="rounded-lg bg-warning-50 dark:bg-warning-500/10 p-8 border border-warning-200 dark:border-warning-500/20">
+        <div class="flex flex-col items-center text-center space-y-4">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-warning-100 dark:bg-warning-500/20">
+                <svg class="w-8 h-8 text-warning-600 dark:text-warning-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-semibold text-warning-800 dark:text-warning-400">
+                    No Data Available
+                </h3>
+                <p class="text-sm text-warning-700 dark:text-warning-300 max-w-md">
+                    You need to import orders before running RFM analysis. Please go back to the first step and import your orders CSV file. Customers are optional and only needed if you want to save segments to customer records.
+                </p>
+            </div>
+        </div>
+    </div>
+    @else
+
+    {{-- Initial State - Show Calculate Button --}}
+    <div x-show="!calculationComplete && !calculationInProgress && !calculationError" class="flex flex-col items-center justify-center py-16 space-y-6">
+        <div class="text-center space-y-4 max-w-md">
+            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-500/20 mx-auto">
+                <svg class="w-10 h-10 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Ready to Calculate RFM Segments
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Click the button below to analyze your customer data and calculate RFM segments based on your settings.
+                </p>
+            </div>
+            <button
+                type="button"
+                wire:click="saveAndCalculate"
+                class="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Calculate RFM Segments
+            </button>
+        </div>
+    </div>
 
     {{-- Loading State --}}
     <div x-show="calculationInProgress" class="flex flex-col items-center justify-center py-16 space-y-6">
@@ -41,7 +83,7 @@
                 <p class="text-sm text-danger-700 dark:text-danger-300" x-text="calculationError"></p>
                 <button
                     type="button"
-                    wire:click="startCalculation"
+                    wire:click="saveAndCalculate"
                     class="mt-4 px-4 py-2 bg-danger-600 hover:bg-danger-700 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                     Retry Calculation
@@ -65,16 +107,27 @@
                         Setup Complete!
                     </h2>
                     <p class="text-success-800 dark:text-success-200 max-w-md">
-                        Your RFM analysis has been calculated successfully. {{ collect($this->segmentStats)->sum('customers') }} customers have been segmented into {{ count($this->segmentStats) }} segments.
+                        Your RFM analysis has been calculated successfully. 
+                        @php
+                            $stats = is_array($this->segmentStats) && !isset($this->segmentStats['message']) ? $this->segmentStats : [];
+                        @endphp
+                        @if(!empty($stats))
+                            {{ collect($stats)->sum('customers') }} customers have been segmented into {{ count($stats) }} segments.
+                        @else
+                            RFM analysis completed.
+                        @endif
                     </p>
                 </div>
 
                 {{-- Quick Stats --}}
-                @if(!empty($this->segmentStats))
+                @php
+                    $stats = is_array($this->segmentStats) && !isset($this->segmentStats['message']) ? $this->segmentStats : [];
+                @endphp
+                @if(!empty($stats))
                 <div class="grid grid-cols-2 gap-4 w-full max-w-md">
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                         <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                            {{ number_format(collect($this->segmentStats)->sum('customers')) }}
+                            {{ number_format(collect($stats)->sum('customers')) }}
                         </div>
                         <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             Total Customers
@@ -82,7 +135,7 @@
                     </div>
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
                         <div class="text-2xl font-bold text-gray-900 dark:text-white">
-                            ${{ number_format(collect($this->segmentStats)->sum(fn($s) => $s['customers'] * $s['avg_monetary']), 0) }}
+                            ${{ number_format(collect($stats)->sum(fn($s) => is_array($s) ? (($s['customers'] ?? 0) * ($s['avg_monetary'] ?? 0)) : 0), 0) }}
                         </div>
                         <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             Total Revenue
@@ -164,5 +217,6 @@
         </div>
 
     </div>
+    @endif
 
 </div>

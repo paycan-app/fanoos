@@ -7,12 +7,11 @@ namespace App\Filament\Pages;
 use App\Services\RfmService;
 use App\Settings\GeneralSettings;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\ImportAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -88,6 +87,13 @@ class SetupWizard extends Page
         $this->metricDefinitions = $rfmService->getMetricDefinitions();
     }
 
+    public function hasDataForAnalysis(): bool
+    {
+        // RFM analysis can work with orders only - customers are only needed if you want to save segments
+        // The RfmService handles this by creating customer objects from order data if customers don't exist
+        return \App\Models\Order::count() > 0;
+    }
+
     public bool $showAdvanced = false;
 
     public function content(Schema $schema): Schema
@@ -100,12 +106,12 @@ class SetupWizard extends Page
                 ->persistStepInQueryString('setup_step')
                 ->steps([
                     Step::make('Import CSVs')
-                    ->description('Import your CSV files based on examples.')
-                    ->schema([
-                        Section::make()
-                           // ->description('Download example CSVs and import your files in order.')
-                            ->schema([
-                                \Filament\Schemas\Components\Html::make('
+                        ->description('Import your CSV files based on examples.')
+                        ->schema([
+                            Section::make()
+                               // ->description('Download example CSVs and import your files in order.')
+                                ->schema([
+                                    \Filament\Schemas\Components\Html::make('
                                     <div class="space-y-2 text-sm">
                                         <p class="font-medium text-neutral-700 dark:text-neutral-300">Example CSV templates:</p>
                                         <ul class="list-disc list-inside space-y-1 text-neutral-600 dark:text-neutral-400">
@@ -117,71 +123,71 @@ class SetupWizard extends Page
                                         <p class="text-xs text-neutral-500 mt-2">Import customers and products first, then orders and order items.</p>
                                     </div>
                                 '),
-                                Grid::make(4)->schema([
-                                    \Filament\Schemas\Components\Text::make('Orders: '.\App\Models\Order::count())->badge(true)->color('warning'),
-                                    \Filament\Schemas\Components\Text::make('Customers: '.\App\Models\Customer::count())->badge(true)->color('warning'),
-                                    \Filament\Schemas\Components\Text::make('Products: '.\App\Models\Product::count())->badge(true)->color('warning'),
+                                    Grid::make(4)->schema([
+                                        \Filament\Schemas\Components\Text::make('Orders: '.\App\Models\Order::count())->badge(true)->color('warning'),
+                                        \Filament\Schemas\Components\Text::make('Customers: '.\App\Models\Customer::count())->badge(true)->color('warning'),
+                                        \Filament\Schemas\Components\Text::make('Products: '.\App\Models\Product::count())->badge(true)->color('warning'),
 
-                                    \Filament\Schemas\Components\Text::make('Order Items: '.\App\Models\OrderItem::count())->badge(true)->color('warning'),
-                                ]),
-                            ])
-                            ->footerActionsAlignment(\Filament\Support\Enums\Alignment::Center)
-                            ->footerActions([
-                                ImportAction::make('import_orders')
-                                    ->label('1. Import Orders *')
-                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
-                                    ->color('success')
-                                    ->importer(\App\Filament\Imports\OrderImporter::class)
-                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        \Filament\Schemas\Components\Text::make('Order Items: '.\App\Models\OrderItem::count())->badge(true)->color('warning'),
+                                    ]),
+                                ])
+                                ->footerActionsAlignment(\Filament\Support\Enums\Alignment::Center)
+                                ->footerActions([
+                                    ImportAction::make('import_orders')
+                                        ->label('1. Import Orders *')
+                                        ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                        ->color('success')
+                                        ->importer(\App\Filament\Imports\OrderImporter::class)
+                                        ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
                                         <div class="text-sm space-y-2">
                                             <p>Please upload a CSV file matching the expected columns.</p>
                                             <p>Download example: <a href="/examples/orders_example.csv" download class="text-primary-600 hover:underline">orders_example.csv</a></p>
                                         </div>
                                     '))
-                                    ->after(fn () => $this->forceRender()),
+                                        ->after(fn () => $this->forceRender()),
 
-                                ImportAction::make('import_customers')
-                                    ->label('2. Import Customers')
-                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
-                                    ->color('info')
-                                    ->importer(\App\Filament\Imports\CustomerImporter::class)
-                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                    ImportAction::make('import_customers')
+                                        ->label('2. Import Customers')
+                                        ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                        ->color('info')
+                                        ->importer(\App\Filament\Imports\CustomerImporter::class)
+                                        ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
                                         <div class="text-sm space-y-2">
                                             <p>Please upload a CSV file matching the expected columns.</p>
                                             <p>Download example: <a href="/examples/customers_example.csv" download class="text-primary-600 hover:underline">customers_example.csv</a></p>
                                         </div>
                                     '))
-                                    ->after(fn () => $this->forceRender()),
-                                ImportAction::make('import_products')
-                                    ->label('3. Import Products')
-                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
-                                    ->color('info')
-                                    ->importer(\App\Filament\Imports\ProductImporter::class)
-                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        ->after(fn () => $this->forceRender()),
+                                    ImportAction::make('import_products')
+                                        ->label('3. Import Products')
+                                        ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                        ->color('info')
+                                        ->importer(\App\Filament\Imports\ProductImporter::class)
+                                        ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
                                         <div class="text-sm space-y-2">
                                             <p>Please upload a CSV file matching the expected columns.</p>
                                             <p>Download example: <a href="/examples/products_example.csv" download class="text-primary-600 hover:underline">products_example.csv</a></p>
                                         </div>
                                     '))
-                                    ->after(fn () => $this->forceRender()),
-                                
-                                ImportAction::make('import_order_items')
-                                    ->label('4. Import Order Items')
-                                    ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
-                                    ->color('info')
-                                    ->importer(\App\Filament\Imports\OrderItemImporter::class)
-                                    ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
+                                        ->after(fn () => $this->forceRender()),
+
+                                    ImportAction::make('import_order_items')
+                                        ->label('4. Import Order Items')
+                                        ->icon(\Filament\Support\Icons\Heroicon::ArrowUpTray)
+                                        ->color('info')
+                                        ->importer(\App\Filament\Imports\OrderItemImporter::class)
+                                        ->modalDescription(static fn (): \Illuminate\Support\HtmlString => new \Illuminate\Support\HtmlString('
                                         <div class="text-sm space-y-2">
                                             <p>Please upload a CSV file matching the expected columns.</p>
                                             <p>Download example: <a href="/examples/order_items_example.csv" download class="text-primary-600 hover:underline">order_items_example.csv</a></p>
                                         </div>
                                     '))
-                                    ->after(fn () => $this->forceRender()),
-                            ]),
-                    ]),
+                                        ->after(fn () => $this->forceRender()),
+                                ]),
+                        ]),
 
                     Step::make('RFM Settings')
-                    ->description('Choose timeframe, segments, and analysis date.')
+                        ->description('Choose timeframe, segments, and analysis date.')
                         ->schema([
                             Section::make()
                              //   ->description('Choose timeframe, segments, bins, and analysis date.')
@@ -190,15 +196,15 @@ class SetupWizard extends Page
                                     \Filament\Schemas\Components\Form::make()->schema([
                                         Grid::make(2)->schema([
 
-                                             \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
-                                            ->viewData(fn () => [
-                                                'modelPath' => 'rfm.rfm_segments',
-                                                'options' => [
-                                                    3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
-                                                    5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, etc.'],
-                                                    11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
-                                                ],
-                                            ]),
+                                            \Filament\Schemas\Components\View::make('filament.forms.rfm-segments-boxes')
+                                                ->viewData(fn () => [
+                                                    'modelPath' => 'rfm.rfm_segments',
+                                                    'options' => [
+                                                        3 => ['label' => '3 Segments', 'desc' => 'High / Medium / Low value'],
+                                                        5 => ['label' => '5 Segments', 'desc' => 'Champions, Loyal, Potential, etc.'],
+                                                        11 => ['label' => '11 Segments', 'desc' => 'Detailed customer journey'],
+                                                    ],
+                                                ]),
 
                                             // ToggleButtons::make('rfm.rfm_segments')
                                             //     ->label('Segmentation Level')
@@ -210,9 +216,6 @@ class SetupWizard extends Page
                                             //     ])
                                             //     ->required(),
                                         ]),
-
-
-                                            
 
                                         Grid::make(2)->schema([
                                             Select::make('rfm.rfm_timeframe_days')
@@ -230,9 +233,6 @@ class SetupWizard extends Page
                                                 ])
                                                 ->helperText('The usual period an averge customer may buy again.')
                                                 ->required(),
-
-                                                
-                                       
 
                                         ]),
 
@@ -254,7 +254,7 @@ class SetupWizard extends Page
                                 ->schema([
                                     \Filament\Schemas\Components\Form::make()->schema([
                                         Grid::make(1)->schema([
-                                            Grid::make(2)->schema([                                  
+                                            Grid::make(2)->schema([
                                                 TextInput::make('rfm.rfm_bins')
                                                     ->label('RFM Score Bins')
                                                     ->numeric()
@@ -280,7 +280,7 @@ class SetupWizard extends Page
 
                     Step::make('Calculate & Review')
                         ->description('RFM analysis results and segment visualization.')
-                        //->icon(Heroicon::ChartBar)
+                        // ->icon(Heroicon::ChartBar)
                         ->schema([
                             \Filament\Schemas\Components\View::make('filament.pages.setup-wizard-step-3-results'),
                         ]),
@@ -291,7 +291,7 @@ class SetupWizard extends Page
     protected function getHeaderActions(): array
     {
         return [
-           
+
         ];
     }
 
@@ -309,6 +309,12 @@ class SetupWizard extends Page
             ->title('RFM settings saved.')
             ->success()
             ->send();
+    }
+
+    public function saveAndCalculate(): void
+    {
+        $this->saveRfmSettings();
+        $this->startCalculation();
     }
 
     public function startCalculation(): void
