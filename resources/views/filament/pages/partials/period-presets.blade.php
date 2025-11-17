@@ -1,9 +1,9 @@
 @php
     $presetColors = [
-        'saved_timeframe' => 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-400/50 dark:bg-amber-500/20 dark:text-amber-100',
-        'last_quarter' => 'border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-400/40 dark:bg-emerald-500/15 dark:text-emerald-100',
-        'half_year' => 'border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100 dark:border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-100',
-        'full_year' => 'border-indigo-300 bg-indigo-50 text-indigo-900 hover:bg-indigo-100 dark:border-indigo-400/40 dark:bg-indigo-500/15 dark:text-indigo-100',
+        'saved_timeframe' => 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-400/50 dark:bg-amber-100/20 dark:text-amber-400 dark:hover:bg-amber-500/35 dark:hover:text-amber-300',
+        'last_quarter' => 'border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-400/40 dark:bg-emerald-100/15 dark:text-emerald-400 dark:hover:bg-emerald-500/30 dark:hover:text-emerald-300',
+        'half_year' => 'border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100 dark:border-sky-400/40 dark:bg-sky-100/15 dark:text-sky-400 dark:hover:bg-sky-500/30 dark:hover:text-sky-300',
+        'full_year' => 'border-indigo-300 bg-indigo-50 text-indigo-900 hover:bg-indigo-100 dark:border-indigo-400/40 dark:bg-indigo-300/30 dark:text-indigo-400 dark:hover:bg-indigo-500/30 dark:hover:text-indigo-300',
     ];
 @endphp
 

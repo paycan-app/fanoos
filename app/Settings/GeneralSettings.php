@@ -12,8 +12,7 @@ class GeneralSettings extends Settings implements RfmSettingsContract
 
     public ?string $about_business = null;
 
-    public bool $maintenance_mode;
-
+    
     // Removed: public bool $rfm_enable;
 
     public int $rfm_bins;

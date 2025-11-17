@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -71,16 +72,18 @@ class SegmentTransitionComparison extends Page
                             'presets' => $this->periodPresets,
                         ]),
                     Form::make()->schema([
-                        DatePicker::make('baselineDate')
-                            ->label('Baseline date')
-                            ->required()
-                            ->native(false)
-                            ->maxDate(fn () => $this->comparisonDate ? Carbon::parse($this->comparisonDate) : null),
-                        DatePicker::make('comparisonDate')
-                            ->label('Comparison date')
-                            ->required()
-                            ->native(false)
-                            ->minDate(fn () => $this->baselineDate ? Carbon::parse($this->baselineDate) : null),
+                        Grid::make(2)->schema([
+                            DatePicker::make('baselineDate')
+                                ->label('Baseline date')
+                                ->required()
+                                ->native(false)
+                                ->maxDate(fn () => $this->comparisonDate ? Carbon::parse($this->comparisonDate) : null),
+                            DatePicker::make('comparisonDate')
+                                ->label('Comparison date')
+                                ->required()
+                                ->native(false)
+                                ->minDate(fn () => $this->baselineDate ? Carbon::parse($this->baselineDate) : null),
+                        ]),
                     ]),
                 ])
                 ->footerActions([
