@@ -9,11 +9,11 @@ use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Components\Flex;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 
@@ -30,94 +30,101 @@ class Dashboard extends BaseDashboard
     public function filtersForm(Schema $schema): Schema
     {
         return $schema->components([
-            Grid::make([
-                'default' => 2,
-                'sm' => 2,
-                'md' => 2,
-                'lg' => 2,
-                'xl' => 2,
-                '2xl' => 2,
-            ])->schema([
-                Section::make('Custom comparison')
-                    ->description('Only visible when “Manual range” is selected.')
-                    ->visible(fn ($get): bool => $get('comparison_mode') === 'custom')
-                    ->columnSpan(1)
-                    ->schema([
-                        Grid::make([
-                            'md' => 2,
-                        ])->schema([
-                            DatePicker::make('comparison_start')
-                                ->label('Comparison start')
-                                ->displayFormat('M j, Y')
-                                ->native(false)
-                                ->closeOnDateSelection()
-                                ->prefixIcon(Heroicon::CalendarDays),
-                            DatePicker::make('comparison_end')
-                                ->label('Comparison end')
-                                ->displayFormat('M j, Y')
-                                ->native(false)
-                                ->closeOnDateSelection()
-                                ->prefixIcon(Heroicon::CalendarDays),
+            Flex::make([
+                Flex::make([
+                    'default' => 1,
+                    'lg' => 3,
+                ])->schema([
+                    ToggleButtons::make('range_preset')
+                        ->options([
+                            '7' => '7d',
+                            '30' => '30d',
+                            'ytd' => 'YTD',
+                            'custom' => 'Custom',
+                        ])
+                        ->default('30')
+                        ->live()
+                        ->afterStateUpdated(function (?string $state, Set $set): void {
+                            $this->applyPreset($state, $set);
+                        })
+                        ->inline()
+                        ->grouped()
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 3,
                         ]),
-                    ]),
-                Section::make('Analysis window')
-                    ->description('Every widget on this page follows the window you set here.')
-                    ->columnSpan(1)
-                    ->schema([
-                        ToggleButtons::make('range_preset')
-                            ->label('Quick presets')
-                            ->options([
-                                '7' => '7d',
-                                '30' => '30d',
-                                '90' => '90d',
-                                'ytd' => 'YTD',
-                                'custom' => 'Custom',
-                            ])
-                            ->default('30')
-                            ->helperText('Pick a preset or fine‑tune the dates below.')
-                            ->live()
-                            ->afterStateUpdated(function (?string $state, Set $set): void {
-                                $this->applyPreset($state, $set);
-                            })
-                            ->inline()
-                            ->grouped(),
-                        Grid::make([
-                            'md' => 2,
-                            'xl' => 2,
-                        ])->schema([
-                            DatePicker::make('range_start')
-                                ->label('Start date')
-                                ->displayFormat('M j, Y')
-                                ->native(false)
-                                ->closeOnDateSelection()
-                                ->default(now()->subDays(29))
-                                ->maxDate(now())
-                                ->prefixIcon(Heroicon::CalendarDays)
-                                ->helperText('Auto-filled by your preset, but editable.')
-                                ->visible(fn ($get): bool => $get('range_preset') === 'custom'),
-                            DatePicker::make('range_end')
-                                ->label('End date')
-                                ->displayFormat('M j, Y')
-                                ->native(false)
-                                ->closeOnDateSelection()
-                                ->default(now())
-                                ->maxDate(now())
-                                ->prefixIcon(Heroicon::CalendarDays)
-                                ->helperText('Widgets compare against data up to this day.')
-                                ->visible(fn ($get): bool => $get('range_preset') === 'custom'),
-                            Select::make('comparison_mode')
-                                ->label('Compare against')
-                                ->options([
-                                    'previous_period' => 'Previous period',
-                                    'previous_year' => 'Same dates last year',
-                                    'custom' => 'Manual range',
-                                ])
-                                ->default('previous_period')
-                                ->live()
-                                ->helperText('Use manual range if you need a specific baseline.'),
+                    DatePicker::make('range_start')
+                        ->label('Start date')
+                        ->displayFormat('M j, Y')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->default(now()->subDays(29))
+                        ->maxDate(now())
+                        ->prefixIcon(Heroicon::CalendarDays)
+                        ->visible(fn ($get): bool => $get('range_preset') === 'custom')
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 1,
                         ]),
+                    DatePicker::make('range_end')
+                        ->label('End date')
+                        ->displayFormat('M j, Y')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->default(now())
+                        ->maxDate(now())
+                        ->prefixIcon(Heroicon::CalendarDays)
+                        ->visible(fn ($get): bool => $get('range_preset') === 'custom')
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 1,
+                        ]),
+                ])
+                    ->grow(),
+                Flex::make([
+                    'default' => 1,
+                    'lg' => 3,
+                ])->schema([
+                    Select::make('comparison_mode')
+                        ->options([
+                            'previous_period' => 'Previous period',
+                            'previous_year' => 'Previous year',
+                            'custom' => 'Custom range',
+                        ])
+                        ->default('previous_period')
+                        ->live()
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 3,
+                        ]),
+                    DatePicker::make('comparison_start')
+                        ->label('Start')
+                        ->displayFormat('M j, Y')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->prefixIcon(Heroicon::CalendarDays)
+                        ->visible(fn ($get): bool => $get('comparison_mode') === 'custom')
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 1,
+                        ]),
+                    DatePicker::make('comparison_end')
+                        ->label('End')
+                        ->displayFormat('M j, Y')
+                        ->native(false)
+                        ->closeOnDateSelection()
+                        ->prefixIcon(Heroicon::CalendarDays)
+                        ->visible(fn ($get): bool => $get('comparison_mode') === 'custom')
+                        ->columnSpan([
+                            'default' => 1,
+                            'lg' => 1,
+                        ]),
+                ])
+                    ->grow(false)
+                    ->extraAttributes([
+                        'class' => 'lg:w-1/2 lg:ml-auto',
                     ]),
-            ]),
+            ])->from('lg'),
         ]);
     }
 
