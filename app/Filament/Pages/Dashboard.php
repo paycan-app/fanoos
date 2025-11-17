@@ -11,7 +11,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
-use Filament\Schemas\Components\Flex;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -29,11 +28,17 @@ class Dashboard extends BaseDashboard
 
     public function filtersForm(Schema $schema): Schema
     {
-        return $schema->components([
-            Flex::make([
-                Flex::make([
+        return $schema
+            ->extraAttributes([
+                'class' => 'lg:flex lg:gap-3',
+            ])
+            ->components([
+                '','',
+                Grid::make([
                     'default' => 1,
-                    'lg' => 3,
+                    'lg' => 2,
+                    'xl' => 2,
+                    '2xl' => 2,
                 ])->schema([
                     ToggleButtons::make('range_preset')
                         ->options([
@@ -80,10 +85,12 @@ class Dashboard extends BaseDashboard
                             'lg' => 1,
                         ]),
                 ])
-                    ->grow(),
-                Flex::make([
+                    ->extraAttributes([
+                        'class' => 'lg:flex-1',
+                    ]),
+                Grid::make([
                     'default' => 1,
-                    'lg' => 3,
+                    'lg' => 2,
                 ])->schema([
                     Select::make('comparison_mode')
                         ->options([
@@ -120,12 +127,10 @@ class Dashboard extends BaseDashboard
                             'lg' => 1,
                         ]),
                 ])
-                    ->grow(false)
                     ->extraAttributes([
                         'class' => 'lg:w-1/2 lg:ml-auto',
                     ]),
-            ])->from('lg'),
-        ]);
+            ]);
     }
 
     public function persistsFiltersInSession(): bool
