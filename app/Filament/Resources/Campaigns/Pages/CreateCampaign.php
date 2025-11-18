@@ -57,7 +57,6 @@ class CreateCampaign extends CreateRecord
                                     'sms' => 'Send via SMS using Twilio',
                                 ])
                                 ->live()
-                                ->afterStateUpdated(fn ($set) => $set('content', ''))
                                 ->default('email'),
 
                             TextInput::make('subject')
@@ -67,7 +66,7 @@ class CreateCampaign extends CreateRecord
                                 ->label('Email Subject')
                                 ->placeholder('e.g., Exclusive Offer Just For You!'),
 
-                            RichEditor::make('content')
+                            RichEditor::make('email_content')
                                 ->label('Message Content')
                                 ->visible(fn ($get) => $get('channel') === 'email')
                                 ->toolbarButtons([
@@ -81,7 +80,7 @@ class CreateCampaign extends CreateRecord
                                 ->helperText(new HtmlString('Available variables: <code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{email}}</code>, <code>{{segment}}</code>, <code>{{monetary}}</code>, <code>{{frequency}}</code>'))
                                 ->required(fn ($get) => $get('channel') === 'email'),
 
-                            Textarea::make('content')
+                            Textarea::make('sms_content')
                                 ->required(fn ($get) => $get('channel') === 'sms')
                                 ->label('SMS Message')
                                 ->visible(fn ($get) => $get('channel') === 'sms')
@@ -89,10 +88,6 @@ class CreateCampaign extends CreateRecord
                                 ->maxLength(160)
                                 ->placeholder('Write your SMS message here (max 160 characters)')
                                 ->helperText(function ($state) {
-                                    if (is_array($state)) {
-                                        return '160 characters remaining';
-                                    }
-
                                     return (160 - strlen($state ?? '')).' characters remaining';
                                 })
                                 ->live(onBlur: true),
@@ -344,13 +339,9 @@ class CreateCampaign extends CreateRecord
             return;
         }
 
-        // Validate content exists
-        $content = $data['content'] ?? '';
-        if (! is_string($content)) {
-            $content = is_array($content) ? '' : (string) $content;
-        }
-
+        // Get content based on channel
         if ($channel === 'email') {
+            $content = $data['email_content'] ?? '';
             $stripped = strip_tags($content);
             $trimmed = trim($stripped);
             if (empty($trimmed)) {
@@ -363,6 +354,7 @@ class CreateCampaign extends CreateRecord
                 return;
             }
         } else {
+            $content = $data['sms_content'] ?? '';
             if (empty(trim($content))) {
                 Notification::make()
                     ->warning()
@@ -375,7 +367,9 @@ class CreateCampaign extends CreateRecord
         }
 
         // Create temporary campaign for testing
-        $tempCampaign = new \App\Models\Campaign($data);
+        $campaignData = $data;
+        $campaignData['content'] = $content;
+        $tempCampaign = new \App\Models\Campaign($campaignData);
         $campaignService = app(CampaignService::class);
 
         try {
@@ -410,13 +404,9 @@ class CreateCampaign extends CreateRecord
 
             // Validate content before launching
             $channel = $data['channel'] ?? 'email';
-            $content = $data['content'] ?? '';
-
-            if (is_array($content)) {
-                $content = '';
-            }
 
             if ($channel === 'email') {
+                $content = $data['email_content'] ?? '';
                 $stripped = strip_tags($content);
                 $trimmed = trim($stripped);
                 if (empty($trimmed)) {
@@ -428,7 +418,9 @@ class CreateCampaign extends CreateRecord
 
                     return;
                 }
+                $data['content'] = $content;
             } else {
+                $content = $data['sms_content'] ?? '';
                 if (empty(trim($content))) {
                     Notification::make()
                         ->danger()
@@ -438,12 +430,13 @@ class CreateCampaign extends CreateRecord
 
                     return;
                 }
+                $data['content'] = $content;
             }
 
-            // Create the campaign - skip mutateFormDataBeforeCreate validation since we already validated
+            // Create the campaign
             $data['status'] = 'draft';
             $data['created_by'] = Auth::id();
-            unset($data['schedule_later'], $data['test_recipient']);
+            unset($data['schedule_later'], $data['test_recipient'], $data['email_content'], $data['sms_content']);
 
             $record = $this->handleRecordCreation($data);
 
@@ -675,24 +668,27 @@ class CreateCampaign extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Validate email content is not empty HTML
-        if (($data['channel'] ?? null) === 'email') {
-            $content = $data['content'] ?? '';
-
-            // If content is an array (shouldn't happen, but handle it), convert to string
-            if (is_array($content)) {
-                $content = json_encode($content);
-            }
+        // Merge content fields based on channel
+        $channel = $data['channel'] ?? 'email';
+        if ($channel === 'email') {
+            $content = $data['email_content'] ?? '';
 
             $stripped = strip_tags($content);
             $trimmed = trim($stripped);
 
             if (empty($trimmed)) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'data.content' => 'The email message content cannot be empty.',
+                    'data.email_content' => 'The email message content cannot be empty.',
                 ]);
             }
+
+            $data['content'] = $content;
+        } else {
+            $data['content'] = $data['sms_content'] ?? '';
         }
+
+        // Remove temporary fields
+        unset($data['email_content'], $data['sms_content']);
 
         $data['status'] = $data['schedule_later'] ?? false ? 'scheduled' : 'draft';
         unset($data['schedule_later'], $data['test_recipient']);
