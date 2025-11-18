@@ -106,10 +106,22 @@ class Campaign extends Model
         return match ($this->filter_type) {
             'all' => $query->get(),
             'segment' => $query->whereIn('segment', $this->filter_config['segments'] ?? [])->get(),
-            'individual' => $query->whereIn('id', $this->filter_config['customer_ids'] ?? [])->get(),
+            'individual' => $this->getIndividualCustomers($query),
             'custom' => $this->applyCustomFilters($query)->get(),
             default => collect(),
         };
+    }
+
+    protected function getIndividualCustomers($query): Collection
+    {
+        $customerIds = $this->filter_config['customer_ids'] ?? [];
+
+        // Handle single customer ID (from Select) or array (from multi-select)
+        if (is_string($customerIds)) {
+            $customerIds = [$customerIds];
+        }
+
+        return $query->whereIn('id', $customerIds)->get();
     }
 
     protected function applyCustomFilters($query)

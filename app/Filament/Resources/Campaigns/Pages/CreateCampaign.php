@@ -24,7 +24,6 @@ use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 
 class CreateCampaign extends CreateRecord
@@ -58,6 +57,7 @@ class CreateCampaign extends CreateRecord
                                     'sms' => 'Send via SMS using Twilio',
                                 ])
                                 ->live()
+                                ->afterStateUpdated(fn ($set) => $set('content', ''))
                                 ->default('email'),
 
                             TextInput::make('subject')
@@ -88,7 +88,13 @@ class CreateCampaign extends CreateRecord
                                 ->rows(4)
                                 ->maxLength(160)
                                 ->placeholder('Write your SMS message here (max 160 characters)')
-                                ->helperText(fn (?string $state) => (160 - strlen($state ?? '')).' characters remaining')
+                                ->helperText(function ($state) {
+                                    if (is_array($state)) {
+                                        return '160 characters remaining';
+                                    }
+
+                                    return (160 - strlen($state ?? '')).' characters remaining';
+                                })
                                 ->live(onBlur: true),
                         ]),
 
@@ -297,48 +303,167 @@ class CreateCampaign extends CreateRecord
                         ]),
                 ])
                     ->columnSpanFull()
-                    ->submitAction(new HtmlString(
-                        Blade::render(<<<'BLADE'
-                            <div class="flex gap-3">
-                                @if (!($this->data['schedule_later'] ?? false))
-                                <x-filament::button
-                                    type="button"
-                                    wire:click="callFormAction('launch_now')"
-                                    color="success"
-                                    icon="heroicon-o-paper-airplane"
-                                >
-                                    Launch Campaign Now
-                                </x-filament::button>
-                                @endif
-
-                                <x-filament::button
-                                    type="submit"
-                                    wire:loading.attr="disabled"
-                                >
-                                    {{ $this->data['schedule_later'] ?? false ? 'Schedule Campaign' : 'Save as Draft' }}
-                                </x-filament::button>
-
-                                <x-filament::button
-                                    type="button"
-                                    wire:click="callFormAction('send_test')"
-                                    color="gray"
-                                    icon="heroicon-o-paper-airplane"
-                                    outlined
-                                >
-                                    Send Test Message
-                                </x-filament::button>
-                            </div>
-                        BLADE)
-                    )),
+                    ->submitAction(view('filament.forms.components.campaign-wizard-actions')),
             ]);
     }
 
-    public function callFormAction(string $name): void
+    public function sendTestMessage(): void
     {
-        $action = collect($this->getFormActions())->firstWhere('name', $name);
+        $data = $this->form->getState();
+        $testRecipient = $data['test_recipient'] ?? null;
+        $channel = $data['channel'] ?? 'email';
 
-        if ($action) {
-            $this->mountAction($name);
+        if (! $testRecipient) {
+            Notification::make()
+                ->warning()
+                ->title('No test recipient')
+                ->body('Please enter a test '.($channel === 'email' ? 'email address' : 'phone number').'.')
+                ->send();
+
+            return;
+        }
+
+        // Validate recipient format based on channel
+        if ($channel === 'email' && ! filter_var($testRecipient, FILTER_VALIDATE_EMAIL)) {
+            Notification::make()
+                ->warning()
+                ->title('Invalid email address')
+                ->body('Please enter a valid email address.')
+                ->send();
+
+            return;
+        }
+
+        if ($channel === 'sms' && ! preg_match('/^\+[1-9]\d{1,14}$/', $testRecipient)) {
+            Notification::make()
+                ->warning()
+                ->title('Invalid phone number')
+                ->body('Please enter a valid phone number in E.164 format (e.g., +1234567890).')
+                ->send();
+
+            return;
+        }
+
+        // Validate content exists
+        $content = $data['content'] ?? '';
+        if (! is_string($content)) {
+            $content = is_array($content) ? '' : (string) $content;
+        }
+
+        if ($channel === 'email') {
+            $stripped = strip_tags($content);
+            $trimmed = trim($stripped);
+            if (empty($trimmed)) {
+                Notification::make()
+                    ->warning()
+                    ->title('Missing email content')
+                    ->body('Please enter email message content before sending a test.')
+                    ->send();
+
+                return;
+            }
+        } else {
+            if (empty(trim($content))) {
+                Notification::make()
+                    ->warning()
+                    ->title('Missing SMS content')
+                    ->body('Please enter SMS message content before sending a test.')
+                    ->send();
+
+                return;
+            }
+        }
+
+        // Create temporary campaign for testing
+        $tempCampaign = new \App\Models\Campaign($data);
+        $campaignService = app(CampaignService::class);
+
+        try {
+            $success = $campaignService->sendTestMessage($tempCampaign, $testRecipient);
+
+            if ($success) {
+                Notification::make()
+                    ->success()
+                    ->title('Test message sent!')
+                    ->body("Check {$testRecipient} for the test message.")
+                    ->send();
+            } else {
+                Notification::make()
+                    ->danger()
+                    ->title('Failed to send test message')
+                    ->body('Please check your '.($channel === 'email' ? 'email' : 'SMS').' configuration.')
+                    ->send();
+            }
+        } catch (\Exception $e) {
+            Notification::make()
+                ->danger()
+                ->title('Failed to send test message')
+                ->body('Error: '.$e->getMessage())
+                ->send();
+        }
+    }
+
+    public function launchCampaignNow(): void
+    {
+        try {
+            $data = $this->form->getState();
+
+            // Validate content before launching
+            $channel = $data['channel'] ?? 'email';
+            $content = $data['content'] ?? '';
+
+            if (is_array($content)) {
+                $content = '';
+            }
+
+            if ($channel === 'email') {
+                $stripped = strip_tags($content);
+                $trimmed = trim($stripped);
+                if (empty($trimmed)) {
+                    Notification::make()
+                        ->danger()
+                        ->title('Validation Error')
+                        ->body('Email message content is required.')
+                        ->send();
+
+                    return;
+                }
+            } else {
+                if (empty(trim($content))) {
+                    Notification::make()
+                        ->danger()
+                        ->title('Validation Error')
+                        ->body('SMS message content is required.')
+                        ->send();
+
+                    return;
+                }
+            }
+
+            // Create the campaign - skip mutateFormDataBeforeCreate validation since we already validated
+            $data['status'] = 'draft';
+            $data['created_by'] = Auth::id();
+            unset($data['schedule_later'], $data['test_recipient']);
+
+            $record = $this->handleRecordCreation($data);
+
+            // Immediately process the campaign
+            $campaignService = app(CampaignService::class);
+            $campaignService->processCampaign($record);
+
+            Notification::make()
+                ->success()
+                ->title('Campaign launched!')
+                ->body('The campaign is now being sent to recipients.')
+                ->send();
+
+            $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+        } catch (\Exception $e) {
+            Notification::make()
+                ->danger()
+                ->title('Failed to launch campaign')
+                ->body('Error: '.$e->getMessage())
+                ->send();
         }
     }
 

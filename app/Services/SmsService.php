@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use Twilio\Rest\Client;
-
 class SmsService
 {
-    protected ?Client $client = null;
+    protected mixed $client = null;
 
     protected ?string $from = null;
 
@@ -20,7 +18,12 @@ class SmsService
             return;
         }
 
-        $this->client = new Client($sid, $token);
+        // Only create Twilio client if the package is installed
+        if (! class_exists(\Twilio\Rest\Client::class)) {
+            return;
+        }
+
+        $this->client = new \Twilio\Rest\Client($sid, $token);
     }
 
     public function send(string $to, string $message): string

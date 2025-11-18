@@ -36,7 +36,7 @@ class CampaignService
 
             if ($campaign->channel === 'email') {
                 Notification::route('mail', $recipient)
-                    ->notify(new CampaignEmailNotification(
+                    ->notifyNow(new CampaignEmailNotification(
                         subject: '[TEST] '.$campaign->subject,
                         content: $content,
                         campaignSendId: null
