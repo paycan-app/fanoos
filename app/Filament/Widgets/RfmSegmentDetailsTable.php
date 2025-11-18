@@ -58,7 +58,7 @@ class RfmSegmentDetailsTable extends Widget
             'Potential Loyalist' => 'primary',
             'New Customers' => 'purple',
             'Promising' => 'info',
-            'Customers Needing Attention', 'Need Attention' => 'warning',
+            'Need Attention' => 'warning',
             'About To Sleep' => 'warning',
             'At Risk' => 'danger',
             'Cannot Lose Them' => 'danger',

@@ -70,7 +70,6 @@ class RfmTreemapChart extends Widget
             'Potential Loyalist' => '#3B82F6', // blue
             'New Customers' => '#A855F7', // purple
             'Promising' => '#06B6D4', // cyan
-            'Customers Needing Attention' => '#F97316', // orange
             'Need Attention' => '#F97316', // orange
             'About To Sleep' => '#F59E0B', // amber
             'At Risk' => '#FB923C', // orange-light

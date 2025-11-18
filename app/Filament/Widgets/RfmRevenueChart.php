@@ -118,7 +118,6 @@ class RfmRevenueChart extends ChartWidget
             'Potential Loyalist' => 'rgba(59, 130, 246, 0.5)',
             'New Customers' => 'rgba(168, 85, 247, 0.5)',
             'Promising' => 'rgba(6, 182, 212, 0.5)',
-            'Customers Needing Attention' => 'rgba(249, 115, 22, 0.5)',
             'Need Attention' => 'rgba(249, 115, 22, 0.5)',
             'About To Sleep' => 'rgba(245, 158, 11, 0.5)',
             'At Risk' => 'rgba(251, 146, 60, 0.5)',

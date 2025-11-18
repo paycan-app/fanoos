@@ -83,7 +83,6 @@ class RfmSegmentDistributionChart extends ChartWidget
             'Potential Loyalist' => 'rgba(59, 130, 246, 0.5)', // blue
             'New Customers' => 'rgba(168, 85, 247, 0.5)', // purple
             'Promising' => 'rgba(6, 182, 212, 0.5)', // cyan
-            'Customers Needing Attention' => 'rgba(249, 115, 22, 0.5)', // orange
             'Need Attention' => 'rgba(249, 115, 22, 0.5)', // orange
             'About To Sleep' => 'rgba(245, 158, 11, 0.5)', // amber
             'At Risk' => 'rgba(251, 146, 60, 0.5)', // orange-light

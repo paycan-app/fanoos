@@ -6,26 +6,30 @@ use App\Filament\Resources\CustomerResource\Pages;
 use App\Filament\Resources\CustomerResource\RelationManagers\OrdersRelationManager;
 use App\Models\Customer;
 use BackedEnum;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Schemas\Schema;
-use Filament\Schemas\Components\Grid;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Actions\ExportAction;
 use Filament\Actions\ImportAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
+use Filament\Tables;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
-class CustomerResource extends Resource {
+class CustomerResource extends Resource
+{
     protected static ?string $model = Customer::class;
-    protected static string | UnitEnum | null $navigationGroup = 'Data';
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-user';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Data';
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user';
+
     protected static ?string $navigationLabel = 'Customers';
+
     protected static ?int $navigationSort = 10;
 
     public static function table(Table $table): Table
@@ -37,7 +41,10 @@ class CustomerResource extends Resource {
                 Tables\Columns\TextColumn::make('last_name')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('email')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('phone')->toggleable(),
-                Tables\Columns\TextColumn::make('segment')->badge()->toggleable(),
+                Tables\Columns\TextColumn::make('segment')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state ? static::getSegmentBadgeColor($state) : 'gray')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->filters([
@@ -89,12 +96,13 @@ class CustomerResource extends Resource {
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
-                        if (!empty($data['from'])) {
-                            $indicators[] = 'From ' . \Carbon\Carbon::parse($data['from'])->toFormattedDateString();
+                        if (! empty($data['from'])) {
+                            $indicators[] = 'From '.\Carbon\Carbon::parse($data['from'])->toFormattedDateString();
                         }
-                        if (!empty($data['until'])) {
-                            $indicators[] = 'Until ' . \Carbon\Carbon::parse($data['until'])->toFormattedDateString();
+                        if (! empty($data['until'])) {
+                            $indicators[] = 'Until '.\Carbon\Carbon::parse($data['until'])->toFormattedDateString();
                         }
+
                         return $indicators;
                     }),
                 Filter::make('birthday')
@@ -109,12 +117,13 @@ class CustomerResource extends Resource {
                     })
                     ->indicateUsing(function (array $data): array {
                         $indicators = [];
-                        if (!empty($data['from'])) {
-                            $indicators[] = 'From ' . \Carbon\Carbon::parse($data['from'])->toFormattedDateString();
+                        if (! empty($data['from'])) {
+                            $indicators[] = 'From '.\Carbon\Carbon::parse($data['from'])->toFormattedDateString();
                         }
-                        if (!empty($data['until'])) {
-                            $indicators[] = 'Until ' . \Carbon\Carbon::parse($data['until'])->toFormattedDateString();
+                        if (! empty($data['until'])) {
+                            $indicators[] = 'Until '.\Carbon\Carbon::parse($data['until'])->toFormattedDateString();
                         }
+
                         return $indicators;
                     }),
             ])
@@ -146,7 +155,9 @@ class CustomerResource extends Resource {
                 TextEntry::make('region'),
                 TextEntry::make('birthday')->date(),
                 TextEntry::make('gender'),
-                TextEntry::make('segment'),
+                TextEntry::make('segment')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state ? static::getSegmentBadgeColor($state) : 'gray'),
                 TextEntry::make('channel'),
                 TextEntry::make('recency')->label('Recency (days)'),
                 TextEntry::make('frequency')->label('Orders Count'),
@@ -168,5 +179,26 @@ class CustomerResource extends Resource {
             'index' => Pages\ListCustomers::route('/'),
             'view' => Pages\ViewCustomer::route('/{record}'),
         ];
+    }
+
+    protected static function getSegmentBadgeColor(string $segment): string
+    {
+        return match ($segment) {
+            'Champions' => 'warning',
+            'Loyal Customers' => 'success',
+            'Potential Loyalist' => 'primary',
+            'New Customers' => 'purple',
+            'Promising' => 'info',
+            'Need Attention' => 'warning',
+            'About To Sleep' => 'warning',
+            'At Risk' => 'danger',
+            'Cannot Lose Them' => 'danger',
+            'Hibernating' => 'danger',
+            'Lost' => 'danger',
+            'High Value' => 'success',
+            'Medium Value' => 'primary',
+            'Low Value' => 'warning',
+            default => 'gray',
+        };
     }
 }

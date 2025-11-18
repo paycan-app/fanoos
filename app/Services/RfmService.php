@@ -248,22 +248,27 @@ class RfmService
 
     protected function assignFiveSegments(int $r, int $f, int $m): string
     {
+        // Champions: Best customers - High R, F, M
         if ($r >= 4 && $f >= 4 && $m >= 4) {
             return 'Champions';
         }
 
+        // Loyal Customers: High frequency and monetary, regardless of recency
         if ($f >= 4 && $m >= 4) {
             return 'Loyal Customers';
         }
 
+        // Potential Loyalist: Recent customers with good potential
         if ($r >= 4 && ($f >= 3 || $m >= 3)) {
             return 'Potential Loyalist';
         }
 
+        // At Risk: Low recency (haven't purchased recently)
         if ($r <= 2) {
             return 'At Risk';
         }
 
+        // Need Attention: Everything else (R=3 with moderate F/M)
         return 'Need Attention';
     }
 
@@ -274,12 +279,7 @@ class RfmService
             return 'Champions';
         }
 
-        // Loyal Customers: Recent and frequent buyers - High F, M
-        if ($r >= 3 && $f >= 4 && $m >= 4) {
-            return 'Loyal Customers';
-        }
-
-        // Potential Loyalist: Recent customers with good potential
+        // Potential Loyalist: Recent customers with good potential (check before Loyal Customers to catch R=4 cases)
         if ($r >= 4 && $f >= 3 && $m >= 3) {
             return 'Potential Loyalist';
         }
@@ -289,14 +289,19 @@ class RfmService
             return 'New Customers';
         }
 
+        // Loyal Customers: Recent and frequent buyers - High F, M
+        if ($r >= 3 && $f >= 4 && $m >= 4) {
+            return 'Loyal Customers';
+        }
+
         // Promising: Recent customers showing promise
         if ($r >= 3 && $f >= 3 && $m >= 3) {
             return 'Promising';
         }
 
-        // Customers Needing Attention: Recent but low engagement
+        // Need Attention: Recent but low engagement
         if ($r >= 3 && $f <= 2 && $m <= 2) {
-            return 'Customers Needing Attention';
+            return 'Need Attention';
         }
 
         // About To Sleep: Risk of losing, were good customers
@@ -304,22 +309,32 @@ class RfmService
             return 'About To Sleep';
         }
 
-        // At Risk: Not recent, declining engagement
-        if ($r <= 2 && $f >= 2 && $m >= 2) {
-            return 'At Risk';
-        }
-
         // Cannot Lose Them: High value but haven't purchased recently
         if ($r <= 2 && $f <= 2 && $m >= 4) {
             return 'Cannot Lose Them';
         }
 
-        // Hibernating: Very inactive
+        // Hibernating: Very inactive (low R and low F, check before At Risk)
         if ($r <= 1 && $f <= 2) {
             return 'Hibernating';
         }
 
-        // Lost: No recent activity
+        // At Risk: Not recent, declining engagement (but not completely inactive)
+        if ($r <= 2 && $f >= 2 && $m >= 2) {
+            return 'At Risk';
+        }
+
+        // At Risk (fallback): Low recency with some activity but doesn't match above
+        if ($r <= 2 && ($f >= 2 || $m >= 2)) {
+            return 'At Risk';
+        }
+
+        // Need Attention (fallback): Recent but moderate/low engagement that didn't match above
+        if ($r >= 3) {
+            return 'Need Attention';
+        }
+
+        // Lost: No recent activity or very low engagement
         return 'Lost';
     }
 
@@ -877,7 +892,7 @@ class RfmService
                 'business_action' => 'Create brand advocates, engage frequently, offer value',
                 'color' => 'indigo',
             ],
-            'Customers Needing Attention' => [
+            'Need Attention' => [
                 'description' => 'Recent but low engagement - need nurturing',
                 'criteria' => 'R ≥ 3, F ≤ 2, M ≤ 2',
                 'business_action' => 'Gather feedback, address concerns, demonstrate value',
