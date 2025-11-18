@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('panel')
             ->path('panel')
             ->login()
-            ->brandLogo(asset('img/fanoos-logo.png'))
+            ->brandLogo(fn () => view('filament.panel.brand'))
             ->brandName('Fanoos')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->colors([

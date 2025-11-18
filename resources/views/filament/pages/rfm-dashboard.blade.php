@@ -48,6 +48,18 @@
                 </x-filament::card>
             </div>
 
+            @if(!empty($this->segmentStats))
+                <x-filament::section>
+                    <x-slot name="heading">Segment Revenue Distribution</x-slot>
+                    <x-slot name="description">Visual breakdown of revenue by customer segment</x-slot>
+
+                    <div class="mt-6">
+                        <div id="segmentTreemap" style="width: 100%; height: 500px;"></div>
+                    </div>
+                    <div id="segmentTreemapData" data-segments="{{ json_encode($this->segmentStats) }}" data-currency="{{ $symbol }}" style="display: none;"></div>
+                </x-filament::section>
+            @endif
+
             @if(!empty($this->insights))
                 <x-filament::section>
                     <x-slot name="heading">Opportunity radar</x-slot>
@@ -135,7 +147,7 @@
                         <x-slot name="heading">Top revenue builders</x-slot>
                         <x-slot name="description">Segments contributing the most revenue</x-slot>
 
-                        <div class="mt-6 space-y-4">
+                        <div class="mt-0 space-y-4">
                             @foreach($this->topSegments as $segment)
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -159,7 +171,7 @@
                         <x-slot name="heading">Win-back priority list</x-slot>
                         <x-slot name="description">High-value groups drifting away</x-slot>
 
-                        <div class="mt-6 space-y-4">
+                        <div class="mt-0 space-y-2">
                             @foreach($this->winBackTargets as $target)
                                 <div class="flex items-center justify-between">
                                     <div>
@@ -182,8 +194,6 @@
             </div>
 
             <div class="space-y-10 mt-12">
-                @livewire('app.filament.widgets.rfm-segment-distribution-chart', ['segmentStats' => $this->segmentStats], key('rfm-segment-distribution-chart'))
-
                 <div class="grid gap-6 lg:grid-cols-2">
                     @livewire('app.filament.widgets.rfm-revenue-chart', [
                         'segmentStats' => $this->segmentStats,
@@ -211,13 +221,6 @@
                     'segmentStats' => $this->segmentStats,
                     'currencySymbol' => $this->currencySymbol,
                 ], key('rfm-metrics-chart'))
-
-                @livewire('app.filament.widgets.rfm-treemap-chart', [
-                    'segmentStats' => $this->segmentStats,
-                    'segmentDefinitions' => $this->segmentDefinitions,
-                    'currencyCode' => $this->currencyCode,
-                    'currencySymbol' => $this->currencySymbol,
-                ], key('rfm-treemap-chart'))
             </div>
 
             <div class="mt-12">
@@ -228,5 +231,155 @@
                 ], key('rfm-segment-details-table'))
             </div>
         </div>
+    @endif
+
+    @if(!empty($this->segmentStats))
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+        <script>
+            (function () {
+                const renderTreemap = () => {
+                    if (typeof Plotly === 'undefined') {
+                        return;
+                    }
+
+                    const dataElement = document.getElementById('segmentTreemapData');
+                    const treemapElement = document.getElementById('segmentTreemap');
+
+                    if (!dataElement || !treemapElement) {
+                        return;
+                    }
+
+                    const segments = JSON.parse(dataElement.dataset.segments || '[]');
+                    const currency = dataElement.dataset.currency || '$';
+
+                    if (!segments || segments.length === 0) {
+                        return;
+                    }
+
+                    const isDark = document.documentElement.classList.contains('dark');
+
+                    // Color palette - distinct colors for each segment
+                    const colorPalette = isDark ? [
+                        '#6366f1', // Indigo
+                        '#8b5cf6', // Purple
+                        '#ec4899', // Pink
+                        '#f59e0b', // Amber
+                        '#10b981', // Emerald
+                        '#3b82f6', // Blue
+                        '#f97316', // Orange
+                        '#06b6d4', // Cyan
+                        '#84cc16', // Lime
+                        '#ef4444', // Red
+                        '#14b8a6', // Teal
+                        '#a855f7', // Violet
+                    ] : [
+                        '#4f46e5', // Indigo
+                        '#7c3aed', // Purple
+                        '#db2777', // Pink
+                        '#d97706', // Amber
+                        '#059669', // Emerald
+                        '#2563eb', // Blue
+                        '#ea580c', // Orange
+                        '#0891b2', // Cyan
+                        '#65a30d', // Lime
+                        '#dc2626', // Red
+                        '#0d9488', // Teal
+                        '#9333ea', // Violet
+                    ];
+
+                    // Build treemap data structure
+                    const labels = ['All Segments'];
+                    const parents = [''];
+                    const values = [];
+                    const customerCounts = [];
+                    const avgMonetaryValues = [];
+                    const colors = [isDark ? '#374151' : '#e5e7eb']; // Root color (gray)
+
+                    segments.forEach((segment, index) => {
+                        const revenue = segment.customers * segment.avg_monetary;
+                        labels.push(segment.segment);
+                        parents.push('All Segments');
+                        values.push(revenue);
+                        customerCounts.push(segment.customers);
+                        avgMonetaryValues.push(segment.avg_monetary);
+                        // Assign color from palette, cycling if needed
+                        colors.push(colorPalette[index % colorPalette.length]);
+                    });
+
+                    // Calculate total revenue and customers for root
+                    const totalCustomers = segments.reduce((sum, s) => sum + s.customers, 0);
+                    const totalRevenue = values.reduce((sum, val) => sum + val, 0);
+                    const avgMonetaryRoot = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+                    customerCounts.unshift(totalCustomers);
+                    avgMonetaryValues.unshift(avgMonetaryRoot);
+                    values.unshift(totalRevenue);
+
+                    const data = [{
+                        type: 'treemap',
+                        labels: labels,
+                        parents: parents,
+                        values: values,
+                        customdata: customerCounts.map((count, i) => [count, avgMonetaryValues[i]]),
+                        textinfo: 'label+percent parent',
+                        texttemplate: '<b>%{label}</b><br>%{percentParent:.1%}',
+                        hovertemplate: '<b>%{label}</b><br>' +
+                            `Revenue: ${currency}%{value:,.0f}<br>` +
+                            'Share: %{percentParent:.1%}<br>' +
+                            'Customers: %{customdata[0]:,}<br>' +
+                            `Avg Value: ${currency}%{customdata[1]:,.0f}<extra></extra>`,
+                        marker: {
+                            colors: colors,
+                            line: {
+                                width: 2,
+                                color: isDark ? '#404040' : '#e5e5e5',
+                            },
+                        },
+                        pathbar: {
+                            visible: true,
+                            edgeshape: '>',
+                        },
+                    }];
+
+                    const layout = {
+                        paper_bgcolor: isDark ? '#1f1f1f' : '#ffffff',
+                        plot_bgcolor: isDark ? '#1f1f1f' : '#ffffff',
+                        font: {
+                            color: isDark ? '#f5f5f5' : '#171717',
+                            family: 'Inter, system-ui, sans-serif',
+                            size: 12,
+                        },
+                        margin: { t: 20, r: 20, b: 20, l: 20 },
+                        height: 500,
+                    };
+
+                    Plotly.react(treemapElement, data, layout, {
+                        responsive: true,
+                        displayModeBar: true,
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
+                    });
+                };
+
+                // Render on page load
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', renderTreemap);
+                } else {
+                    renderTreemap();
+                }
+
+                // Re-render on dark mode toggle (if needed)
+                const observer = new MutationObserver(() => {
+                    const treemapElement = document.getElementById('segmentTreemap');
+                    if (treemapElement && treemapElement.data) {
+                        renderTreemap();
+                    }
+                });
+
+                observer.observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['class'],
+                });
+            })();
+        </script>
     @endif
 </x-filament-panels::page>

@@ -7,7 +7,7 @@ use Livewire\Attributes\Reactive;
 
 class RfmMetricsChart extends ChartWidget
 {
-    protected ?string $heading = 'RFM Metrics Comparison';
+    protected ?string $heading = 'Customer Segments Distribution';
 
     protected ?string $description = 'Average Recency, Frequency, and Monetary values by segment';
 

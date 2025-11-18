@@ -22,44 +22,61 @@ class RfmRevenueChart extends ChartWidget
 
     protected function getData(): array
     {
-        if (empty($this->segmentStats)) {
+        if (empty($this->segmentStats) || ! is_array($this->segmentStats)) {
             return [
                 'datasets' => [],
                 'labels' => [],
             ];
         }
 
-        // Calculate revenue and sort
         $revenueData = collect($this->segmentStats)
-            ->map(fn ($segment) => [
-                'segment' => $segment['segment'],
-                'revenue' => $segment['customers'] * $segment['avg_monetary'],
-            ])
+            ->filter(fn ($segment) => isset($segment['segment'], $segment['customers'], $segment['avg_monetary']))
+            ->map(function ($segment) {
+                $customers = (int) ($segment['customers'] ?? 0);
+                $avgMonetary = (float) ($segment['avg_monetary'] ?? 0);
+
+                return [
+                    'segment' => $segment['segment'],
+                    'revenue' => $customers * $avgMonetary,
+                ];
+            })
+            ->filter(fn ($item) => $item['revenue'] > 0)
             ->sortByDesc('revenue')
             ->values()
             ->all();
 
-        $colors = $this->getSegmentColors();
+        if (empty($revenueData)) {
+            return [
+                'datasets' => [],
+                'labels' => [],
+            ];
+        }
 
+        $colors = $this->getSegmentColors();
         $currencyCode = strtoupper($this->currencyCode ?? 'USD');
+
+        $labels = array_column($revenueData, 'segment');
+        $revenueValues = array_column($revenueData, 'revenue');
+        $backgroundColors = array_map(
+            fn ($segment) => $colors[$segment] ?? 'rgba(107, 114, 128, 0.5)',
+            $labels
+        );
+        $borderColors = array_map(
+            fn ($color) => str_replace('0.5', '1', $color),
+            $backgroundColors
+        );
 
         return [
             'datasets' => [
                 [
                     'label' => "Revenue ({$currencyCode})",
-                    'data' => array_column($revenueData, 'revenue'),
-                    'backgroundColor' => array_map(
-                        fn ($item) => $colors[$item['segment']] ?? 'rgba(107, 114, 128, 0.5)',
-                        $revenueData
-                    ),
-                    'borderColor' => array_map(
-                        fn ($item) => str_replace('0.5', '1', $colors[$item['segment']] ?? 'rgba(107, 114, 128, 1)'),
-                        $revenueData
-                    ),
+                    'data' => $revenueValues,
+                    'backgroundColor' => $backgroundColors,
+                    'borderColor' => $borderColors,
                     'borderWidth' => 2,
                 ],
             ],
-            'labels' => array_column($revenueData, 'segment'),
+            'labels' => $labels,
         ];
     }
 
@@ -70,27 +87,24 @@ class RfmRevenueChart extends ChartWidget
 
     protected function getOptions(): array
     {
-        $symbol = json_encode($this->currencySymbol ?? '$');
-
         return [
             'plugins' => [
                 'legend' => [
                     'display' => false,
                 ],
-                'tooltip' => [
-                    'callbacks' => [
-                        'label' => new \Filament\Support\RawJs("function(context) { const symbol = {$symbol}; const value = context.parsed.y ?? 0; return symbol + value.toLocaleString(); }"),
-                    ],
-                ],
             ],
             'scales' => [
-                'y' => [
-                    'beginAtZero' => true,
+                'x' => [
                     'ticks' => [
-                        'callback' => new \Filament\Support\RawJs("function(value) { const symbol = {$symbol}; return symbol + value.toLocaleString(); }"),
+                        'maxRotation' => 45,
+                        'minRotation' => 45,
                     ],
                 ],
+                'y' => [
+                    'beginAtZero' => true,
+                ],
             ],
+            'indexAxis' => 'x',
             'responsive' => true,
             'maintainAspectRatio' => false,
         ];

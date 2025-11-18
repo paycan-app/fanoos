@@ -16,6 +16,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Components\Section;
@@ -65,8 +66,9 @@ class CreateCampaign extends CreateRecord
                                 ->placeholder('e.g., Exclusive Offer Just For You!'),
 
                             RichEditor::make('content')
-                                ->required()
+                                ->required(fn ($get) => $get('channel') === 'email')
                                 ->label('Message Content')
+                                ->minLength(8)
                                 ->visible(fn ($get) => $get('channel') === 'email')
                                 ->toolbarButtons([
                                     'bold',
@@ -79,7 +81,7 @@ class CreateCampaign extends CreateRecord
                                 ->helperText(new HtmlString('Available variables: <code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{email}}</code>, <code>{{segment}}</code>, <code>{{monetary}}</code>, <code>{{frequency}}</code>')),
 
                             Textarea::make('content')
-                                ->required()
+                                ->required(fn ($get) => $get('channel') === 'sms')
                                 ->label('SMS Message')
                                 ->visible(fn ($get) => $get('channel') === 'sms')
                                 ->rows(4)
@@ -133,6 +135,15 @@ class CreateCampaign extends CreateRecord
                                         ->mapWithKeys(fn ($customer) => [
                                             $customer->id => $customer->first_name.' '.$customer->last_name.' ('.$customer->email.')',
                                         ]);
+                                })
+                                ->getOptionLabelUsing(function (?string $value): ?string {
+                                    if ($value === null) {
+                                        return null;
+                                    }
+
+                                    $customer = Customer::find($value);
+
+                                    return $customer ? $customer->first_name.' '.$customer->last_name.' ('.$customer->email.')' : null;
                                 })
                                 ->required(fn ($get) => $get('filter_type') === 'individual'),
 
@@ -225,6 +236,18 @@ class CreateCampaign extends CreateRecord
                                 }),
                         ]),
 
+                    Step::make('Review Recipients')
+                        ->description('Review the list of customers')
+                        ->schema([
+                            ViewField::make('recipients_table')
+                                ->label('')
+                                ->view('filament.forms.components.recipients-table')
+                                ->viewData(fn ($get) => [
+                                    'filterType' => $get('filter_type'),
+                                    'filterConfig' => $get('filter_config') ?? [],
+                                ]),
+                        ]),
+
                     Step::make('Schedule & Send')
                         ->description('Test and launch your campaign')
                         ->schema([
@@ -241,12 +264,13 @@ class CreateCampaign extends CreateRecord
                                 ->native(false),
 
                             Section::make('Test Message')
-                                ->description('Send a test message before launching the campaign')
+                                ->description(fn ($get) => 'Send a test '.($get('../../channel') === 'email' ? 'email' : 'SMS').' before launching the campaign')
                                 ->schema([
                                     TextInput::make('test_recipient')
                                         ->label(fn ($get) => $get('../../channel') === 'email' ? 'Test Email Address' : 'Test Phone Number')
                                         ->placeholder(fn ($get) => $get('../../channel') === 'email' ? 'test@example.com' : '+1234567890')
-                                        ->helperText('Enter an email or phone number to receive a test message'),
+                                        ->helperText(fn ($get) => 'Enter '.($get('../../channel') === 'email' ? 'an email address' : 'a phone number (E.164 format)').' to receive a test message')
+                                        ->rule(fn ($get) => $get('../../channel') === 'email' ? 'email' : 'regex:/^\+[1-9]\d{1,14}$/'),
                                 ])
                                 ->collapsible(),
 

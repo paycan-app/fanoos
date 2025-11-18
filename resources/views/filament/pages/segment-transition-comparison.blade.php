@@ -108,17 +108,18 @@
         <x-filament::section>
             <x-slot name="heading">Change Highlights</x-slot>
             <div class="mt-3 rounded-md border-l-4 border-primary-400 bg-primary-50/70 px-4 py-3 text-sm text-primary-900 dark:border-primary-300 dark:bg-primary-500/10 dark:text-primary-100">
-                <p>{{ $primaryInsight ?? 'Choose two periods and run the analysis to generate human-readable insights.' }}</p>
-                @if($secondaryInsight)
-                    <p class="mt-1">{{ $secondaryInsight }}</p>
-                @endif
-                @if($additionalInsights->isNotEmpty())
-                    <ul class="mt-2 list-disc space-y-1 pl-5 text-primary-900/80 dark:text-primary-100/80">
-                        @foreach($additionalInsights as $insight)
-                            <li>{{ $insight }}</li>
-                        @endforeach
-                    </ul>
-                @endif
+                <ul class="list-disc space-y-1 pl-5 text-primary-900/80 dark:text-primary-100/80">
+                    <li>{{ $primaryInsight ?? 'Choose two periods and run the analysis to generate human-readable insights.' }}</li>
+                    @if($secondaryInsight)
+                        <li>{{ $secondaryInsight }}</li>
+                    @endif
+                    @if($additionalInsights->isNotEmpty())
+                            @foreach($additionalInsights as $insight)
+                                <li>{{ $insight }}</li>
+                            @endforeach
+                    
+                    @endif
+            </ul>
             </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-3">
                 <div>
@@ -325,7 +326,7 @@
                         x: matrix.labels,
                         y: matrix.labels,
                         type: 'heatmap',
-                        colorscale: 'Viridis',
+                        colorscale: 'Turbo',
                         hoverongaps: false,
                         hovertemplate: 'From %{y} to %{x}<br>Count: %{z}<extra></extra>',
                     }], {
@@ -355,7 +356,10 @@
                             label: sankey.node.labels,
                             color: sankey.node.colors,
                         },
-                        link: sankey.link ?? {},
+                        link: {
+                            ...(sankey.link ?? {}),
+                            color: sankey.link?.color || sankey.node.colors,
+                        },
                     }], {
                         ...layoutDefaults,
                         margin: { t: 20, r: 40, b: 40, l: 40 },

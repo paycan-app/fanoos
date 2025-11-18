@@ -50,7 +50,10 @@ class SegmentTransitionComparison extends Page
 
     public function mount(): void
     {
-        $this->baselineDate = now()->subYear()->toDateString();
+        $settings = app(RfmSettingsContract::class);
+        $timeframe = $settings->getRfmTimeframeDays();
+
+        $this->baselineDate = now()->subDays($timeframe)->toDateString();
         $this->comparisonDate = now()->toDateString();
         $this->sankeyData = $this->emptySankeyPayload();
         $this->periodPresets = $this->buildPeriodPresets();
@@ -374,6 +377,7 @@ class SegmentTransitionComparison extends Page
         $targets = [];
         $values = [];
         $linkLabels = [];
+        $linkColors = [];
 
         foreach ($matrix as $i => $row) {
             foreach ($row as $j => $value) {
@@ -385,6 +389,9 @@ class SegmentTransitionComparison extends Page
                 $targets[] = $count + $j;
                 $values[] = $value;
                 $linkLabels[] = $labels[$i].' → '.$labels[$j].' ('.number_format($value).')';
+                // Color links based on source node color with some transparency for visual appeal
+                $sourceColor = $nodeColors[$i] ?? $this->mapDefinitionColor();
+                $linkColors[] = $sourceColor;
             }
         }
 
@@ -402,6 +409,7 @@ class SegmentTransitionComparison extends Page
                 'target' => $targets,
                 'value' => $values,
                 'label' => $linkLabels,
+                'color' => $linkColors,
             ],
         ];
     }
@@ -418,6 +426,7 @@ class SegmentTransitionComparison extends Page
                 'target' => [],
                 'value' => [],
                 'label' => [],
+                'color' => [],
             ],
         ];
     }
