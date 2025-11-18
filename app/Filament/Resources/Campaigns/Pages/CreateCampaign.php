@@ -23,6 +23,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\HtmlString;
 
 class CreateCampaign extends CreateRecord
@@ -66,9 +67,7 @@ class CreateCampaign extends CreateRecord
                                 ->placeholder('e.g., Exclusive Offer Just For You!'),
 
                             RichEditor::make('content')
-                                ->required(fn ($get) => $get('channel') === 'email')
                                 ->label('Message Content')
-                                ->minLength(8)
                                 ->visible(fn ($get) => $get('channel') === 'email')
                                 ->toolbarButtons([
                                     'bold',
@@ -78,7 +77,8 @@ class CreateCampaign extends CreateRecord
                                     'orderedList',
                                 ])
                                 ->placeholder('Write your email message here. Use {{first_name}}, {{last_name}}, {{segment}}, etc.')
-                                ->helperText(new HtmlString('Available variables: <code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{email}}</code>, <code>{{segment}}</code>, <code>{{monetary}}</code>, <code>{{frequency}}</code>')),
+                                ->helperText(new HtmlString('Available variables: <code>{{first_name}}</code>, <code>{{last_name}}</code>, <code>{{email}}</code>, <code>{{segment}}</code>, <code>{{monetary}}</code>, <code>{{frequency}}</code>'))
+                                ->required(fn ($get) => $get('channel') === 'email'),
 
                             Textarea::make('content')
                                 ->required(fn ($get) => $get('channel') === 'sms')
@@ -275,7 +275,7 @@ class CreateCampaign extends CreateRecord
                                 ->collapsible(),
 
                             Hidden::make('created_by')
-                                ->default(fn () => auth()->id()),
+                                ->default(fn () => Auth::id()),
 
                             Placeholder::make('final_summary')
                                 ->label('Campaign Summary')
@@ -299,49 +299,225 @@ class CreateCampaign extends CreateRecord
 
     protected function getFormActions(): array
     {
-        return [
+        $actions = [
             Action::make('send_test')
                 ->label('Send Test Message')
+                ->icon(\Filament\Support\Icons\Heroicon::OutlinedPaperAirplane)
                 ->action(function (array $data) {
                     $testRecipient = $data['test_recipient'] ?? null;
+                    $channel = $data['channel'] ?? 'email';
 
                     if (! $testRecipient) {
                         Notification::make()
                             ->warning()
                             ->title('No test recipient')
-                            ->body('Please enter a test email or phone number.')
+                            ->body('Please enter a test '.($channel === 'email' ? 'email address' : 'phone number').'.')
                             ->send();
 
                         return;
                     }
 
+                    // Validate recipient format based on channel
+                    if ($channel === 'email' && ! filter_var($testRecipient, FILTER_VALIDATE_EMAIL)) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Invalid email address')
+                            ->body('Please enter a valid email address.')
+                            ->send();
+
+                        return;
+                    }
+
+                    if ($channel === 'sms' && ! preg_match('/^\+[1-9]\d{1,14}$/', $testRecipient)) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Invalid phone number')
+                            ->body('Please enter a valid phone number in E.164 format (e.g., +1234567890).')
+                            ->send();
+
+                        return;
+                    }
+
+                    // Validate content exists
+                    $content = $data['content'] ?? '';
+                    if (! is_string($content)) {
+                        $content = is_array($content) ? '' : (string) $content;
+                    }
+
+                    if ($channel === 'email') {
+                        $stripped = strip_tags($content);
+                        $trimmed = trim($stripped);
+                        if (empty($trimmed)) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Missing email content')
+                                ->body('Please enter email message content before sending a test.')
+                                ->send();
+
+                            return;
+                        }
+                    } else {
+                        if (empty(trim($content))) {
+                            Notification::make()
+                                ->warning()
+                                ->title('Missing SMS content')
+                                ->body('Please enter SMS message content before sending a test.')
+                                ->send();
+
+                            return;
+                        }
+                    }
+
+                    // Create temporary campaign for testing
                     $tempCampaign = new \App\Models\Campaign($data);
                     $campaignService = app(CampaignService::class);
 
-                    $success = $campaignService->sendTestMessage($tempCampaign, $testRecipient);
+                    try {
+                        $success = $campaignService->sendTestMessage($tempCampaign, $testRecipient);
 
-                    if ($success) {
-                        Notification::make()
-                            ->success()
-                            ->title('Test message sent!')
-                            ->body("Check {$testRecipient} for the test message.")
-                            ->send();
-                    } else {
+                        if ($success) {
+                            Notification::make()
+                                ->success()
+                                ->title('Test message sent!')
+                                ->body("Check {$testRecipient} for the test message.")
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->danger()
+                                ->title('Failed to send test message')
+                                ->body('Please check your '.($channel === 'email' ? 'email' : 'SMS').' configuration.')
+                                ->send();
+                        }
+                    } catch (\Exception $e) {
                         Notification::make()
                             ->danger()
                             ->title('Failed to send test message')
-                            ->body('Please check your email/SMS configuration.')
+                            ->body('Error: '.$e->getMessage())
                             ->send();
                     }
                 })
                 ->color('gray'),
-
-            ...(parent::getFormActions()),
         ];
+
+        // Add launch button before parent actions
+        $actions[] = Action::make('launch_now')
+            ->label('Launch Campaign Now')
+            ->icon(\Filament\Support\Icons\Heroicon::OutlinedPaperAirplane)
+            ->requiresConfirmation()
+            ->modalHeading('Launch Campaign')
+            ->modalDescription(function ($get) {
+                $filterType = $get('filter_type');
+                $filterConfig = $get('filter_config') ?? [];
+                $count = 0;
+
+                if ($filterType === 'all') {
+                    $count = \App\Models\Customer::count();
+                } elseif ($filterType === 'segment' && isset($filterConfig['segments'])) {
+                    $count = \App\Models\Customer::whereIn('segment', $filterConfig['segments'])->count();
+                } elseif ($filterType === 'individual' && isset($filterConfig['customer_ids'])) {
+                    $count = 1;
+                } elseif ($filterType === 'custom') {
+                    $query = \App\Models\Customer::query();
+                    if (! empty($filterConfig['segments'])) {
+                        $query->whereIn('segment', $filterConfig['segments']);
+                    }
+                    if (! empty($filterConfig['countries'])) {
+                        $query->whereIn('country', $filterConfig['countries']);
+                    }
+                    if (! empty($filterConfig['labels'])) {
+                        $query->where(function ($q) use ($filterConfig) {
+                            foreach ($filterConfig['labels'] as $label) {
+                                $q->orWhereJsonContains('labels', $label);
+                            }
+                        });
+                    }
+                    if (isset($filterConfig['created_after'])) {
+                        $query->where('created_at', '>=', $filterConfig['created_after']);
+                    }
+                    if (isset($filterConfig['created_before'])) {
+                        $query->where('created_at', '<=', $filterConfig['created_before']);
+                    }
+                    $count = $query->count();
+                }
+
+                return "This will send the campaign to {$count} recipients immediately.";
+            })
+            ->action(function (array $data) {
+                // Validate content before launching
+                $channel = $data['channel'] ?? 'email';
+                $content = $data['content'] ?? '';
+
+                if (! is_string($content)) {
+                    $content = is_array($content) ? '' : (string) $content;
+                }
+
+                if ($channel === 'email') {
+                    $stripped = strip_tags($content);
+                    $trimmed = trim($stripped);
+                    if (empty($trimmed)) {
+                        Notification::make()
+                            ->danger()
+                            ->title('Validation Error')
+                            ->body('Email message content is required.')
+                            ->send();
+
+                        return;
+                    }
+                } else {
+                    if (empty(trim($content))) {
+                        Notification::make()
+                            ->danger()
+                            ->title('Validation Error')
+                            ->body('SMS message content is required.')
+                            ->send();
+
+                        return;
+                    }
+                }
+
+                // Create the campaign
+                $campaign = $this->mutateFormDataBeforeCreate($data);
+                $campaign['status'] = 'draft';
+                $campaign['created_by'] = Auth::id();
+
+                $record = $this->handleRecordCreation($campaign);
+
+                // Immediately process the campaign
+                $campaignService = app(CampaignService::class);
+                $campaignService->processCampaign($record);
+
+                Notification::make()
+                    ->success()
+                    ->title('Campaign launched!')
+                    ->body('The campaign is now being sent to recipients.')
+                    ->send();
+
+                $this->redirect($this->getResource()::getUrl('view', ['record' => $record]));
+            })
+            ->color('success')
+            ->visible(fn ($get) => ! ($get('schedule_later') ?? false));
+
+        // Add parent actions (like "Create" button) at the end
+        $actions = array_merge($actions, parent::getFormActions());
+
+        return $actions;
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Validate email content is not empty HTML
+        if (($data['channel'] ?? null) === 'email') {
+            $content = $data['content'] ?? '';
+            $stripped = strip_tags($content);
+            $trimmed = trim($stripped);
+
+            if (empty($trimmed)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'data.content' => 'The email message content cannot be empty.',
+                ]);
+            }
+        }
+
         $data['status'] = $data['schedule_later'] ?? false ? 'scheduled' : 'draft';
         unset($data['schedule_later'], $data['test_recipient']);
 
