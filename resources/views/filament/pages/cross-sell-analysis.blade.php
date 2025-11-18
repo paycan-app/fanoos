@@ -58,7 +58,7 @@
 
                     var layout = {
                         title: {
-                            text: 'Top 10 Cross-Sell Product Pairs',
+                            text: 'Top Cross-Sell Product Pairs',
                             font: {
                                 size: 18
                             }
