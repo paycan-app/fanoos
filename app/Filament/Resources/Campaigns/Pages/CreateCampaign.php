@@ -264,13 +264,14 @@ class CreateCampaign extends CreateRecord
                                 ->native(false),
 
                             Section::make('Test Message')
-                                ->description(fn ($get) => 'Send a test '.($get('../../channel') === 'email' ? 'email' : 'SMS').' before launching the campaign')
+                                ->description(fn ($get) => 'Send a test '.($get('channel') === 'email' ? 'email' : 'SMS').' before launching the campaign')
                                 ->schema([
+                                    // fix chpreview messqage by removing ../../channel and use 'channel'
                                     TextInput::make('test_recipient')
-                                        ->label(fn ($get) => $get('../../channel') === 'email' ? 'Test Email Address' : 'Test Phone Number')
-                                        ->placeholder(fn ($get) => $get('../../channel') === 'email' ? 'test@example.com' : '+1234567890')
-                                        ->helperText(fn ($get) => 'Enter '.($get('../../channel') === 'email' ? 'an email address' : 'a phone number (E.164 format)').' to receive a test message')
-                                        ->rule(fn ($get) => $get('../../channel') === 'email' ? 'email' : 'regex:/^\+[1-9]\d{1,14}$/'),
+                                        ->label(fn ($get) => $get('channel') === 'email' ? 'Test Email Address' : 'Test Phone Number')
+                                        ->placeholder(fn ($get) => $get('channel') === 'email' ? 'test@example.com' : '+1234567890')
+                                        ->helperText(fn ($get) => 'Enter '.($get('channel') === 'email' ? 'an email address' : 'a phone number (E.164 format)').' to receive a test message')
+                                        ->rule(fn ($get) => $get('channel') === 'email' ? 'email' : 'regex:/^\+[1-9]\d{1,14}$/'),
                                 ])
                                 ->collapsible(),
 
@@ -346,6 +347,7 @@ class CreateCampaign extends CreateRecord
 
                     if ($channel === 'email') {
                         $stripped = strip_tags($content);
+                        Log::info($stripped, $content);
                         $trimmed = trim($stripped);
                         if (empty($trimmed)) {
                             Notification::make()
