@@ -24,6 +24,7 @@ use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 
 class CreateCampaign extends CreateRecord
@@ -294,8 +295,51 @@ class CreateCampaign extends CreateRecord
                                     ');
                                 }),
                         ]),
-                ])->columnSpanFull(),
+                ])
+                    ->columnSpanFull()
+                    ->submitAction(new HtmlString(
+                        Blade::render(<<<'BLADE'
+                            <div class="flex gap-3">
+                                @if (!($this->data['schedule_later'] ?? false))
+                                <x-filament::button
+                                    type="button"
+                                    wire:click="callFormAction('launch_now')"
+                                    color="success"
+                                    icon="heroicon-o-paper-airplane"
+                                >
+                                    Launch Campaign Now
+                                </x-filament::button>
+                                @endif
+
+                                <x-filament::button
+                                    type="submit"
+                                    wire:loading.attr="disabled"
+                                >
+                                    {{ $this->data['schedule_later'] ?? false ? 'Schedule Campaign' : 'Save as Draft' }}
+                                </x-filament::button>
+
+                                <x-filament::button
+                                    type="button"
+                                    wire:click="callFormAction('send_test')"
+                                    color="gray"
+                                    icon="heroicon-o-paper-airplane"
+                                    outlined
+                                >
+                                    Send Test Message
+                                </x-filament::button>
+                            </div>
+                        BLADE)
+                    )),
             ]);
+    }
+
+    public function callFormAction(string $name): void
+    {
+        $action = collect($this->getFormActions())->firstWhere('name', $name);
+
+        if ($action) {
+            $this->mountAction($name);
+        }
     }
 
     protected function getFormActions(): array
@@ -347,7 +391,6 @@ class CreateCampaign extends CreateRecord
 
                     if ($channel === 'email') {
                         $stripped = strip_tags($content);
-                        Log::info($stripped, $content);
                         $trimmed = trim($stripped);
                         if (empty($trimmed)) {
                             Notification::make()
@@ -510,6 +553,12 @@ class CreateCampaign extends CreateRecord
         // Validate email content is not empty HTML
         if (($data['channel'] ?? null) === 'email') {
             $content = $data['content'] ?? '';
+
+            // If content is an array (shouldn't happen, but handle it), convert to string
+            if (is_array($content)) {
+                $content = json_encode($content);
+            }
+
             $stripped = strip_tags($content);
             $trimmed = trim($stripped);
 

@@ -82,7 +82,7 @@ class DashboardAnalyticsService
 
         $totalOrders = (clone $ordersQuery)->count();
         $totalRevenue = (float) (clone $ordersQuery)->sum('total_amount');
-        $activeCustomers = (clone $ordersQuery)->distinct('customer_id')->count('customer_id');
+        $activeCustomers = (clone $ordersQuery)->whereNotNull('customer_id')->distinct('customer_id')->count('customer_id');
 
         $totalCustomers = Customer::query()
             ->where('created_at', '<=', $range['end'])
@@ -94,6 +94,7 @@ class DashboardAnalyticsService
 
         $newOrders = Order::query()
             ->whereBetween('created_at', [$range['start'], $range['end']])
+            ->whereNotNull('customer_id')
             ->whereIn('customer_id', function ($query) use ($range): void {
                 $query
                     ->select('customers.id')
@@ -179,8 +180,10 @@ class DashboardAnalyticsService
             ->selectRaw('products.category as product_category')
             ->selectRaw('SUM(order_items.quantity) as total_quantity')
             ->selectRaw('SUM(order_items.price) as total_revenue')
-            ->join('products', 'products.id', '=', 'order_items.product_id')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->leftJoin('products', 'products.id', '=', 'order_items.product_id')
+            ->leftJoin('orders', 'orders.id', '=', 'order_items.order_id')
+            ->whereNotNull('order_items.product_id')
+            ->whereNotNull('order_items.order_id')
             ->whereBetween('orders.created_at', [$range['start'], $range['end']])
             ->groupBy('products.id', 'products.title', 'products.category')
             ->orderByDesc('total_revenue')
