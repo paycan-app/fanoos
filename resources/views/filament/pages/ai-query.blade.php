@@ -67,7 +67,45 @@
                 </div>
             @endif
 
-            {{ $this->table }}
+            @if(count($this->queryResults) > 0)
+                <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-800">
+                            <tr>
+                                @foreach($this->queryColumns as $column)
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {{ str($column)->title()->replace('_', ' ') }}
+                                    </th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            @foreach($this->queryResults as $row)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    @foreach($this->queryColumns as $column)
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                                            @php
+                                                $value = $row[$column] ?? '';
+                                                if (is_array($value) || is_object($value)) {
+                                                    $value = json_encode($value);
+                                                }
+                                            @endphp
+                                            {{ $value }}
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Showing {{ count($this->queryResults) }} results
+                </div>
+            @else
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <p>The query returned no results.</p>
+                </div>
+            @endif
         </x-filament::section>
     @endif
 

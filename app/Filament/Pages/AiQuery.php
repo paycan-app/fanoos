@@ -6,19 +6,13 @@ use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use UnitEnum;
 
-class AiQuery extends Page implements HasTable
+class AiQuery extends Page
 {
-    use InteractsWithTable;
-
     protected static ?string $navigationLabel = 'AI Query';
 
     protected static ?string $title = 'AI Query';
@@ -46,35 +40,6 @@ class AiQuery extends Page implements HasTable
     public array $queryColumns = [];
 
     public array $queryResults = [];
-
-    public function table(Table $table): Table
-    {
-        return $table
-            ->records(function (): array {
-                return $this->queryResults;
-            })
-            ->columns($this->getTableColumns())
-            ->paginated([10, 25, 50, 100])
-            ->defaultPaginationPageOption(25);
-    }
-
-    protected function getTableColumns(): array
-    {
-        if (empty($this->queryColumns)) {
-            return [
-                TextColumn::make('empty')
-                    ->label('No Results')
-                    ->placeholder('Submit a question to see results'),
-            ];
-        }
-
-        return collect($this->queryColumns)
-            ->map(fn (string $column) => TextColumn::make($column)
-                ->label(str($column)->title()->replace('_', ' ')->toString())
-                ->wrap()
-            )
-            ->toArray();
-    }
 
     public function submitQuery(): void
     {
@@ -176,6 +141,12 @@ class AiQuery extends Page implements HasTable
                 $this->queryColumns = array_keys($this->queryResults[0]);
                 $this->hasResults = true;
 
+                Log::info('AI Query Results', [
+                    'count' => count($this->queryResults),
+                    'columns' => $this->queryColumns,
+                    'first_row' => $this->queryResults[0] ?? null,
+                ]);
+
                 Notification::make()
                     ->title('Query Executed')
                     ->body('Found '.count($this->queryResults).' results.')
@@ -192,9 +163,6 @@ class AiQuery extends Page implements HasTable
                     ->warning()
                     ->send();
             }
-
-            // Reset the table to reload with new data
-            $this->resetTable();
 
         } catch (\Exception $e) {
             $this->hasResults = false;
@@ -238,6 +206,5 @@ class AiQuery extends Page implements HasTable
         $this->hasResults = false;
         $this->queryColumns = [];
         $this->queryResults = [];
-        $this->resetTable();
     }
 }
