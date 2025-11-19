@@ -47,4 +47,8 @@ return [
         'from' => env('TWILIO_FROM'),
     ],
 
+    'ai_query' => [
+        'endpoint' => env('AI_QUERY_ENDPOINT', 'https://34135-lmu3n.irann8n.com/webhook/question-processor'),
+    ],
+
 ];
