@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -14,9 +14,13 @@ class Customer extends Model
     use HasUuids;
 
     protected $table = 'customers';
+
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -33,6 +37,7 @@ class Customer extends Model
         'birthday',
         'gender',
         'segment',
+        'rfm_code',
         'labels',
         'channel',
         'meta',
@@ -63,9 +68,10 @@ class Customer extends Model
     public function getRecencyAttribute(): ?int
     {
         $last = $this->orders()->max('created_at');
-        if (!$last) {
+        if (! $last) {
             return null;
         }
+
         return now()->diffInDays($last);
     }
 

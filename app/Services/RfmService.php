@@ -403,9 +403,11 @@ class RfmService
             $mScore = $this->scoreValue($vals['m'], $mBreaks, $bins);
 
             $segment = $this->assignSegment($rScore, $fScore, $mScore, $vals['r'], $vals['f'], $vals['m'], $segmentCount);
+            $rfmCode = (string) $rScore.(string) $fScore.(string) $mScore;
 
             if ($save && $c->exists) {
                 $c->segment = $segment;
+                $c->rfm_code = $rfmCode;
                 $c->save();
             }
 
@@ -593,9 +595,11 @@ class RfmService
             $mScore = $this->scoreValue($vals['m'], $mBreaks, $bins);
 
             $segment = $this->assignSegment($rScore, $fScore, $mScore, $vals['r'], $vals['f'], $vals['m'], $segmentCount);
+            $rfmCode = (string) $rScore.(string) $fScore.(string) $mScore;
 
             if ($save && $c->exists) {
                 $c->segment = $segment;
+                $c->rfm_code = $rfmCode;
                 $c->save();
             }
 

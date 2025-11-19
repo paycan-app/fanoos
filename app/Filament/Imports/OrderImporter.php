@@ -20,7 +20,7 @@ class OrderImporter extends Importer
                 ->requiredMapping()
                 ->rules(['required', Rule::unique('orders', 'id')]),
             ImportColumn::make('customer_id')
-                ->rules(['nullable', Rule::exists('customers', 'id')]),
+                ->rules(['nullable', 'string']),
             ImportColumn::make('created_at')
                 ->castStateUsing(fn (?string $state) => blank($state) ? null : Carbon::parse($state)->format('Y-m-d H:i:s'))
                 ->rules(['nullable', 'date']),
