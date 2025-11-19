@@ -20,9 +20,11 @@ class OrderItemImporter extends Importer
                 ->requiredMapping()
                 ->rules(['required', Rule::unique('order_items', 'id')]),
             ImportColumn::make('order_id')
-                ->rules(['nullable', Rule::exists('orders', 'id')]),
+                ->integer()
+                ->rules(['nullable', 'integer']),
             ImportColumn::make('product_id')
-                ->rules(['nullable', Rule::exists('products', 'id')]),
+                ->integer()
+                ->rules(['nullable', 'integer']),
             ImportColumn::make('quantity')
                 ->integer()
                 ->rules(['nullable', 'integer', 'min:0']),
