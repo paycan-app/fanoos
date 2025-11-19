@@ -2,48 +2,60 @@
 
 namespace App\Services;
 
+use App\Contracts\SmsGatewayInterface;
+use App\Services\Sms\MelipayamakGateway;
+use App\Services\Sms\TwilioGateway;
+
 class SmsService
 {
-    protected mixed $client = null;
-
-    protected ?string $from = null;
+    protected SmsGatewayInterface $gateway;
 
     public function __construct()
     {
-        $sid = config('services.twilio.sid');
-        $token = config('services.twilio.token');
-        $this->from = config('services.twilio.from');
-
-        if (! $sid || ! $token || ! $this->from) {
-            return;
-        }
-
-        // Only create Twilio client if the package is installed
-        if (! class_exists(\Twilio\Rest\Client::class)) {
-            return;
-        }
-
-        $this->client = new \Twilio\Rest\Client($sid, $token);
+        $this->gateway = $this->resolveGateway();
     }
 
+    /**
+     * Send an SMS message.
+     *
+     * @param  string  $to  The recipient's phone number
+     * @param  string  $message  The message content
+     * @return string The message ID from the gateway
+     *
+     * @throws \Exception
+     */
     public function send(string $to, string $message): string
     {
-        if (! $this->client || ! $this->from) {
-            throw new \Exception('Twilio credentials not configured. Please set TWILIO_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM in your .env file.');
-        }
+        return $this->gateway->send($to, $message);
+    }
 
-        try {
-            $result = $this->client->messages->create(
-                $to,
-                [
-                    'from' => $this->from,
-                    'body' => $message,
-                ]
-            );
+    /**
+     * Get the current SMS provider name.
+     */
+    public function getProviderName(): string
+    {
+        return config('services.sms.provider', 'twilio');
+    }
 
-            return $result->sid;
-        } catch (\Exception $e) {
-            throw new \Exception('Failed to send SMS: '.$e->getMessage());
-        }
+    /**
+     * Check if the gateway is properly configured.
+     */
+    public function isConfigured(): bool
+    {
+        return $this->gateway->isConfigured();
+    }
+
+    /**
+     * Resolve the appropriate gateway based on configuration.
+     */
+    protected function resolveGateway(): SmsGatewayInterface
+    {
+        $provider = config('services.sms.provider', 'twilio');
+
+        return match ($provider) {
+            'melipayamak' => new MelipayamakGateway,
+            'twilio' => new TwilioGateway,
+            default => new TwilioGateway,
+        };
     }
 }
